@@ -65,7 +65,7 @@ function getAvatarColor(assigneeId: string | null): string {
 }
 
 export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
-  const { tasks, moveTask, softDeleteTask } = useTaskStore();
+  const { tasks, moveTask, updateTask, softDeleteTask } = useTaskStore();
   const getSyncStatus = useIntegrationStore((s) => s.getSyncStatus);
   const syncStatus = getSyncStatus(task.id);
   const priority = PRIORITY_STYLES[task.priority];
@@ -90,6 +90,8 @@ export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
 
   const childTasks = tasks.filter((t) => t.parentId === task.id && !t.deletedAt);
   const completedChildTasks = childTasks.filter((t) => t.status === 'Done');
+  const visibleChildTasks = childTasks.slice(0, 4);
+  const remainingChildTasks = childTasks.length - visibleChildTasks.length;
 
   return (
     <article
@@ -172,6 +174,36 @@ export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
                 width: `${(completedChildTasks.length / childTasks.length) * 100}%`,
               }}
             />
+          </div>
+          <div className="mt-1.5 flex flex-col gap-1">
+            {visibleChildTasks.map((childTask) => {
+              const isDone = childTask.status === 'Done';
+
+              return (
+                <button
+                  key={childTask.id}
+                  type="button"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateTask(childTask.id, { status: isDone ? 'To Do' : 'Done' });
+                  }}
+                  className="flex min-w-0 items-center gap-1.5 rounded-md px-1 py-0.5 text-left text-[11px] transition hover:bg-white/5"
+                >
+                  <span className={isDone ? 'text-emerald-400' : 'text-slate-500'}>
+                    {isDone ? '✓' : '○'}
+                  </span>
+                  <span className={`truncate ${isDone ? 'text-slate-500 line-through' : 'text-slate-300'}`}>
+                    {childTask.title}
+                  </span>
+                </button>
+              );
+            })}
+            {remainingChildTasks > 0 && (
+              <p className="pl-4 text-[10px] font-medium text-slate-500">
+                Lihat {remainingChildTasks} lainnya...
+              </p>
+            )}
           </div>
         </div>
       )}
