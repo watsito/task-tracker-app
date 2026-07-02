@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
-      <body className="relative flex min-h-full flex-col">{children}</body>
+      <body className="relative flex h-full min-h-full flex-col">{children}</body>
     </html>
   );
 }

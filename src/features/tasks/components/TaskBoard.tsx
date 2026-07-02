@@ -276,7 +276,7 @@ export default function TaskBoard() {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden p-6 md:p-8">
       {/* Board header row */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="shrink-0 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-100">
             Project Board
@@ -329,7 +329,7 @@ export default function TaskBoard() {
       </div>
 
       {/* Mobile Tab Switcher */}
-      <div className="flex xl:hidden overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6 md:-mx-8 md:px-8">
+      <div className="shrink-0 flex xl:hidden overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6 md:-mx-8 md:px-8">
         <div className="flex gap-2">
           {COLUMNS.map((col) => {
             const isActive = activeTab === col.status;
@@ -358,8 +358,8 @@ export default function TaskBoard() {
 
       {/* Kanban columns */}
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-        <div className="flex-1 overflow-hidden relative">
-          <div className="absolute inset-0 flex flex-col xl:grid xl:grid-cols-4 gap-4 pb-4">
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <div className="grid h-full min-h-0 grid-cols-1 gap-4 pb-4 xl:grid-cols-4">
             {COLUMNS.map((col) => {
               const colTasks = activeTasks.filter((t) => t.status === col.status);
               const isActiveMobile = activeTab === col.status;
@@ -412,7 +412,7 @@ function DroppableColumn({ col, colTasks, isActiveMobile, isAdmin, onAddClick, o
     <section
       ref={setNodeRef}
       id={`column-${col.status.toLowerCase().replace(/\s+/g, '-')}`}
-      className={`flex-col h-full rounded-2xl border transition-all duration-300 ${
+      className={`h-full min-h-0 flex-col overflow-hidden rounded-2xl border transition-all duration-300 ${
         isOver ? 'border-indigo-400 bg-slate-800/80' : `${col.borderColor} bg-slate-900/60`
       } shadow-lg ${col.glowColor} backdrop-blur-sm ${isActiveMobile ? 'flex' : 'hidden xl:flex'}`}
     >
@@ -425,7 +425,7 @@ function DroppableColumn({ col, colTasks, isActiveMobile, isAdmin, onAddClick, o
       </div>
 
       {/* Task list */}
-      <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2.5 min-h-0">
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto overscroll-contain p-3">
         {colTasks.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-white/10 py-8 text-center mt-auto mb-auto">
             <span className="text-2xl opacity-30">📋</span>
