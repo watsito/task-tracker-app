@@ -55,7 +55,7 @@ export default function AppHeader({ showRoleToggle = false }: AppHeaderProps) {
               </svg>
             </div>
             <span className="hidden text-sm font-bold tracking-tight text-slate-100 sm:block">
-              Task Tracker
+              Product dev & Management
             </span>
             <span className="hidden rounded-full bg-indigo-500/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-400 sm:block">
               Beta
