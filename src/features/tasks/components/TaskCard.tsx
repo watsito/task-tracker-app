@@ -1,0 +1,257 @@
+'use client';
+
+import { Task, TaskPriority, TaskStatus } from '../types/task';
+import { useTaskStore } from '../store/taskStore';
+import { useIntegrationStore } from '@/features/integrations/store/integrationStore';
+import SyncStatusBadge from '@/features/integrations/components/SyncStatusBadge';
+import { useDraggable } from '@dnd-kit/core';
+
+// ─── Priority badge config ─────────────────────────────────────────────────
+const PRIORITY_STYLES: Record<
+  TaskPriority,
+  { label: string; classes: string; dot: string }
+> = {
+  Low: {
+    label: 'Low',
+    classes: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    dot: 'bg-emerald-400',
+  },
+  Medium: {
+    label: 'Medium',
+    classes: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
+    dot: 'bg-sky-400',
+  },
+  High: {
+    label: 'High',
+    classes: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+    dot: 'bg-amber-400',
+  },
+  Urgent: {
+    label: 'Urgent',
+    classes: 'bg-red-500/15 text-red-400 border-red-500/30',
+    dot: 'bg-red-400',
+  },
+};
+
+// ─── Status order for move buttons ────────────────────────────────────────
+const STATUS_ORDER: TaskStatus[] = ['To Do', 'In Progress', 'Review', 'Done'];
+
+interface TaskCardProps {
+  task: Task;
+  isAdmin: boolean;
+  onEdit?: () => void;
+}
+
+/** Derives initials from an assignee ID for the avatar placeholder. */
+function getAvatarLabel(assigneeId: string | null): string {
+  if (!assigneeId) return '?';
+  const map: Record<string, string> = {
+    'user-1': 'AM',
+    'user-2': 'BR',
+    'user-3': 'CJ',
+  };
+  return map[assigneeId] ?? assigneeId.slice(0, 2).toUpperCase();
+}
+
+function getAvatarColor(assigneeId: string | null): string {
+  const colors = [
+    'from-indigo-500 to-purple-600',
+    'from-sky-500 to-cyan-600',
+    'from-rose-500 to-pink-600',
+  ];
+  if (!assigneeId) return colors[0];
+  const index = parseInt(assigneeId.replace(/\D/g, '') || '0', 10) % colors.length;
+  return colors[index];
+}
+
+export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
+  const { tasks, moveTask, softDeleteTask } = useTaskStore();
+  const getSyncStatus = useIntegrationStore((s) => s.getSyncStatus);
+  const syncStatus = getSyncStatus(task.id);
+  const priority = PRIORITY_STYLES[task.priority];
+
+  const currentIndex = STATUS_ORDER.indexOf(task.status);
+  const canMoveBack = currentIndex > 0;
+  const canMoveForward = currentIndex < STATUS_ORDER.length - 1;
+
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: task.id,
+    data: { status: task.status },
+  });
+
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        zIndex: isDragging ? 50 : undefined,
+        opacity: isDragging ? 0.8 : 1,
+        boxShadow: isDragging ? '0 20px 25px -5px rgb(0 0 0 / 0.5)' : undefined,
+      }
+    : undefined;
+
+  const childTasks = tasks.filter((t) => t.parentId === task.id && !t.deletedAt);
+  const completedChildTasks = childTasks.filter((t) => t.status === 'Done');
+
+  return (
+    <article
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      id={`task-card-${task.id}`}
+      className={`group relative flex flex-col gap-3 rounded-xl border border-white/[0.07] bg-slate-800/60 p-4 backdrop-blur-sm transition-all duration-200 hover:border-white/[0.14] hover:bg-slate-800/80 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5 ${
+        isDragging ? 'cursor-grabbing border-indigo-500/50' : 'cursor-grab'
+      }`}
+    >
+      {/* Priority badge */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${priority.classes}`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${priority.dot}`} />
+            {priority.label}
+          </span>
+          {task.team && (
+            <span className="inline-flex items-center rounded-full border border-slate-500/30 bg-slate-500/10 px-2 py-0.5 text-[10px] font-medium text-slate-300">
+              {task.team}
+            </span>
+          )}
+          <SyncStatusBadge status={syncStatus} />
+        </div>
+
+        {/* Edit and Delete Buttons */}
+        <div className="flex gap-1">
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              title="Edit task"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-slate-500 opacity-0 transition-all duration-150 hover:bg-indigo-500/20 hover:text-indigo-400 group-hover:opacity-100"
+            >
+              <PencilIcon />
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              id={`delete-task-${task.id}`}
+              onClick={() => softDeleteTask(task.id)}
+              title="Soft delete task"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-slate-600 opacity-0 transition-all duration-150 hover:bg-red-500/20 hover:text-red-400 group-hover:opacity-100"
+            >
+              <TrashIcon />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Title & description */}
+      <div className="flex flex-col gap-1">
+        <h3 className="text-sm font-semibold leading-snug text-slate-100">
+          {task.title}
+        </h3>
+        <p className="line-clamp-2 text-xs leading-relaxed text-slate-400">
+          {task.description}
+        </p>
+      </div>
+
+      {/* Subtasks Progress */}
+      {childTasks.length > 0 && (
+        <div className="flex flex-col gap-1.5 mt-1">
+          <div className="flex items-center justify-between text-[10px] font-medium text-slate-400">
+            <span className="flex items-center gap-1">
+              <CheckSquareIcon />
+              Subtasks
+            </span>
+            <span>
+              {completedChildTasks.length}/{childTasks.length} Selesai
+            </span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-700/50">
+            <div
+              className="h-full rounded-full bg-indigo-500 transition-all duration-300"
+              style={{
+                width: `${(completedChildTasks.length / childTasks.length) * 100}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Footer: avatar + move controls */}
+      <div className="flex items-center justify-between pt-1">
+        {/* Assignee avatar */}
+        <div
+          className={`flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br text-[10px] font-bold text-white ${getAvatarColor(task.assigneeId)}`}
+          title={task.assigneeId ?? 'Unassigned'}
+        >
+          {getAvatarLabel(task.assigneeId)}
+        </div>
+
+        {/* Move buttons */}
+        <div className="flex gap-1">
+          <button
+            id={`move-back-${task.id}`}
+            onClick={() => moveTask(task.id, STATUS_ORDER[currentIndex - 1])}
+            disabled={!canMoveBack}
+            title={canMoveBack ? `Move to ${STATUS_ORDER[currentIndex - 1]}` : 'Already at first column'}
+            className="flex h-6 w-6 items-center justify-center rounded-md text-slate-500 transition-colors disabled:cursor-not-allowed disabled:opacity-30 hover:enabled:bg-white/10 hover:enabled:text-slate-200"
+          >
+            <ChevronLeftIcon />
+          </button>
+          <button
+            id={`move-forward-${task.id}`}
+            onClick={() => moveTask(task.id, STATUS_ORDER[currentIndex + 1])}
+            disabled={!canMoveForward}
+            title={canMoveForward ? `Move to ${STATUS_ORDER[currentIndex + 1]}` : 'Already at last column'}
+            className="flex h-6 w-6 items-center justify-center rounded-md text-slate-500 transition-colors disabled:cursor-not-allowed disabled:opacity-30 hover:enabled:bg-white/10 hover:enabled:text-slate-200"
+          >
+            <ChevronRightIcon />
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+// ─── Inline micro-icons (no external dependency) ──────────────────────────
+
+function TrashIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4M6.667 7.333v4M9.333 7.333v4M3.333 4l.667 9.333a1.333 1.333 0 001.333 1.334h5.334a1.333 1.333 0 001.333-1.334L12.667 4" />
+    </svg>
+  );
+}
+
+function ChevronLeftIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 12L6 8l4-4" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 4l4 4-4 4" />
+    </svg>
+  );
+}
+
+function CheckSquareIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 11 12 14 22 4" />
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+    </svg>
+  );
+}

@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # Development environment (Hot-reloading, mounts local source code)
+  dev:
+    image: node:18-alpine
+    container_name: task_tracker_dev
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    command: sh -c "npm install && npm run dev"
+
+  # Production environment (Builds using Dockerfile standalone output)
+  prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: task_tracker_prod
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
