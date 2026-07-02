@@ -11,7 +11,7 @@ const roles: { value: UserRole; label: string; icon: string }[] = [
 export default function RoleToggle() {
   const { currentUser, setRole } = useAuthStore();
 
-  if (!currentUser) return null;
+  if (!currentUser || currentUser.role !== 'admin') return null;
 
   return (
     <div className="flex items-center gap-2">

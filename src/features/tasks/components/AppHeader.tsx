@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import HeaderUser from './HeaderUser';
-import RoleToggle from './RoleToggle';
+import { useAuthStore } from '../store/authStore';
 
 const NAV = [
   { href: '/', label: 'Board', icon: BoardIcon },
@@ -12,13 +12,12 @@ const NAV = [
   { href: '/integrations', label: 'Integrations', icon: IntegrationsIcon },
 ];
 
-interface AppHeaderProps {
-  /** Set true on Board page to show RoleToggle in header */
-  showRoleToggle?: boolean;
-}
-
-export default function AppHeader({ showRoleToggle = false }: AppHeaderProps) {
+export default function AppHeader() {
   const pathname = usePathname();
+  const currentUser = useAuthStore((s) => s.currentUser);
+  const navItems = currentUser?.role === 'admin'
+    ? [...NAV, { href: '/users', label: 'Users', icon: UsersIcon }]
+    : NAV;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -65,7 +64,7 @@ export default function AppHeader({ showRoleToggle = false }: AppHeaderProps) {
           {/* Desktop nav */}
           <div className="ml-1 hidden items-center gap-1 md:flex">
             <div className="mx-2 h-5 w-px bg-white/[0.08]" />
-            {NAV.map(({ href, label, icon: Icon }) => {
+            {navItems.map(({ href, label, icon: Icon }) => {
               const isActive = pathname === href;
               return (
                 <Link
@@ -88,14 +87,6 @@ export default function AppHeader({ showRoleToggle = false }: AppHeaderProps) {
 
         {/* Right: Desktop extras + User */}
         <div className="flex items-center gap-2">
-          {/* RoleToggle — desktop only */}
-          {showRoleToggle && (
-            <div className="hidden md:block">
-              <RoleToggle />
-            </div>
-          )}
-          <div className="hidden h-5 w-px bg-white/10 md:block" />
-
           {/* User avatar — always visible */}
           <HeaderUser />
 
@@ -126,7 +117,7 @@ export default function AppHeader({ showRoleToggle = false }: AppHeaderProps) {
         }`}
       >
         <nav className="flex flex-col gap-1 p-3">
-          {NAV.map(({ href, label, icon: Icon }) => {
+          {navItems.map(({ href, label, icon: Icon }) => {
             const isActive = pathname === href;
             return (
               <Link
@@ -147,15 +138,6 @@ export default function AppHeader({ showRoleToggle = false }: AppHeaderProps) {
           })}
         </nav>
 
-        {/* RoleToggle in mobile menu */}
-        {showRoleToggle && (
-          <div className="border-t border-white/[0.06] px-4 py-3.5">
-            <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-              Tampilan Peran
-            </p>
-            <RoleToggle />
-          </div>
-        )}
       </div>
     </>
   );
@@ -195,6 +177,16 @@ function IntegrationsIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10" />
+    </svg>
+  );
+}
+function UsersIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 00-3-3.87" />
+      <path d="M16 3.13a4 4 0 010 7.75" />
     </svg>
   );
 }
