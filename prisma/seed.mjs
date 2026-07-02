@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import bcrypt from 'bcryptjs';
 import pg from 'pg';
 
 const { Client } = pg;
@@ -11,15 +12,16 @@ await client.query('BEGIN');
 await client.query('DELETE FROM tasks');
 await client.query('DELETE FROM users');
 
+const defaultPasswordHash = await bcrypt.hash('password123', 10);
 const users = [
-  ['user-admin', 'Admin Demo', 'admin@example.com', 'ADMIN'],
-  ['user-member', 'Member Demo', 'member@example.com', 'MEMBER'],
-  ['user-qa', 'QA Demo', 'qa@example.com', 'MEMBER'],
+  ['user-admin', 'Admin Demo', 'admin@example.com', defaultPasswordHash, 'ADMIN'],
+  ['user-member', 'Member Demo', 'member@example.com', defaultPasswordHash, 'MEMBER'],
+  ['user-qa', 'QA Demo', 'qa@example.com', defaultPasswordHash, 'MEMBER'],
 ];
 
 for (const user of users) {
   await client.query(
-    'INSERT INTO users (id, name, email, role, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4::"UserRole", NOW(), NOW())',
+    'INSERT INTO users (id, name, email, "passwordHash", role, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5::"UserRole", NOW(), NOW())',
     user
   );
 }
