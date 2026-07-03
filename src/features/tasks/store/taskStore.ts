@@ -30,6 +30,7 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
 function normalizeTask(task: Task): Task {
   return {
     ...task,
+    dueDate: task.dueDate ? new Date(task.dueDate) : null,
     createdAt: new Date(task.createdAt),
     deletedAt: task.deletedAt ? new Date(task.deletedAt) : undefined,
   };

@@ -97,6 +97,13 @@ function validateTaskRow(
     return { error: `${label}: priority "${priority}" tidak valid. Gunakan: ${VALID_PRIORITIES.join(', ')}.` };
   }
 
+  const dueDateValue = String(row.duedate ?? row.dueDate ?? '').trim();
+  const dueDate = dueDateValue ? new Date(dueDateValue) : null;
+
+  if (dueDateValue && Number.isNaN(dueDate?.getTime())) {
+    return { error: `${label}: dueDate "${dueDateValue}" tidak valid.` };
+  }
+
   return {
     task: {
       title,
@@ -104,6 +111,7 @@ function validateTaskRow(
       status,
       priority,
       assigneeId: String(row.assigneeid ?? row.assigneeId ?? '').trim() || null,
+      dueDate,
     },
   };
 }

@@ -5,6 +5,7 @@ import { useTaskStore } from '../store/taskStore';
 import { useAuthStore } from '../store/authStore';
 import { TaskStatus, TaskPriority, Task } from '../types/task';
 import TaskCard from './TaskCard';
+import { isTaskDueSoon, isTaskOverdue } from '@/features/reports/utils/exportUtils';
 import {
   DndContext,
   DragEndEvent,
@@ -88,6 +89,7 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
   const [priority, setPriority] = useState<TaskPriority>(editTask?.priority || 'Medium');
   const [status, setStatus] = useState<TaskStatus>(editTask?.status || defaultStatus);
   const [team, setTeam] = useState<string>(editTask?.team || '');
+  const [dueDate, setDueDate] = useState<string>(editTask?.dueDate ? editTask.dueDate.toISOString().slice(0, 10) : '');
   const [parentId, setParentId] = useState<string>(editTask?.parentId || '');
   
   const availableParents = tasks.filter(t => 
@@ -100,11 +102,12 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
     if (!title.trim()) return;
     
     const finalParentId = parentId || null;
+    const finalDueDate = dueDate ? new Date(`${dueDate}T23:59:59`) : null;
     
     if (editTask) {
-      updateTask(editTask.id, { title: title.trim(), description: description.trim(), status, priority, team: team || null, parentId: finalParentId });
+      updateTask(editTask.id, { title: title.trim(), description: description.trim(), status, priority, team: team || null, parentId: finalParentId, dueDate: finalDueDate });
     } else {
-      await addTask({ title: title.trim(), description: description.trim(), status, priority, assigneeId: null, parentId: finalParentId, team: team || null });
+      await addTask({ title: title.trim(), description: description.trim(), status, priority, assigneeId: null, parentId: finalParentId, team: team || null, dueDate: finalDueDate });
     }
 
     onClose();
@@ -191,6 +194,17 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
             </select>
           </div>
 
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="new-task-due-date" className="text-xs font-medium text-slate-400">Deadline</label>
+            <input
+              id="new-task-due-date"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500/60"
+            />
+          </div>
+
           {/* Parent Task Selection */}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="new-task-parent" className="text-xs font-medium text-slate-400">Jadikan Sub-tugas dari... (Opsional)</label>
@@ -242,6 +256,7 @@ export default function TaskBoard() {
   // Advanced Filtering States
   const [filterMyTasks, setFilterMyTasks] = useState(false);
   const [filterUrgentOnly, setFilterUrgentOnly] = useState(false);
+  const [filterOverdueOnly, setFilterOverdueOnly] = useState(false);
 
   useEffect(() => {
     const unsubscribe = subscribeToTasks();
@@ -269,14 +284,17 @@ export default function TaskBoard() {
     if (t.parentId) return false; // Hide subtasks from main board
     if (filterMyTasks && currentUser && t.assigneeId !== currentUser.id) return false;
     if (filterUrgentOnly && t.priority !== 'Urgent') return false;
+    if (filterOverdueOnly && !isTaskOverdue(t)) return false;
     return true;
   });
   const deletedCount = tasks.filter((t) => !!t.deletedAt).length;
+  const overdueCount = tasks.filter((t) => !t.parentId && isTaskOverdue(t)).length;
+  const dueSoonCount = tasks.filter((t) => !t.parentId && isTaskDueSoon(t)).length;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden p-6 md:p-8">
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-6 overflow-hidden p-6 md:p-8">
       {/* Board header row */}
-      <div className="shrink-0 flex flex-wrap items-center justify-between gap-4">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-100">
             Project Board
@@ -290,6 +308,20 @@ export default function TaskBoard() {
               </span>
             )}
           </p>
+          {(overdueCount > 0 || dueSoonCount > 0) && (
+            <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold">
+              {overdueCount > 0 && (
+                <span className="rounded-full border border-red-500/25 bg-red-500/10 px-2.5 py-1 text-red-300">
+                  {overdueCount} overdue
+                </span>
+              )}
+              {dueSoonCount > 0 && (
+                <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-amber-300">
+                  {dueSoonCount} due soon
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -315,6 +347,16 @@ export default function TaskBoard() {
             >
               Urgent Only
             </button>
+            <button
+              onClick={() => setFilterOverdueOnly(!filterOverdueOnly)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                filterOverdueOnly
+                  ? 'bg-rose-600 border-rose-400 text-white shadow-md'
+                  : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200'
+              }`}
+            >
+              Overdue {overdueCount > 0 ? `(${overdueCount})` : ''}
+            </button>
           </div>
 
           <button
@@ -329,7 +371,7 @@ export default function TaskBoard() {
       </div>
 
       {/* Mobile Tab Switcher */}
-      <div className="shrink-0 flex xl:hidden overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6 md:-mx-8 md:px-8">
+      <div className="flex shrink-0 xl:hidden overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6 md:-mx-8 md:px-8">
         <div className="flex gap-2">
           {COLUMNS.map((col) => {
             const isActive = activeTab === col.status;

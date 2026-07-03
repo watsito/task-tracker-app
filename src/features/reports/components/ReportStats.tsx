@@ -59,7 +59,7 @@ export default function ReportStats() {
   return (
     <div className="flex flex-col gap-6">
       {/* KPI row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-7">
         <KpiCard label="Total Tasks"  value={s.total}    sub={`${s.archived} diarsipkan`} accent="text-indigo-400" />
         <KpiCard label="Active"       value={s.active}   sub="belum diarsipkan"            accent="text-sky-400" />
         <KpiCard label="Selesai"      value={s.byStatus['Done']} sub="status Done"          accent="text-emerald-400" />
@@ -69,6 +69,9 @@ export default function ReportStats() {
           sub={`${s.byStatus['Done']} dari ${s.active} tasks`}
           accent={s.completionRate >= 75 ? 'text-emerald-400' : s.completionRate >= 40 ? 'text-amber-400' : 'text-red-400'}
         />
+        <KpiCard label="Overdue" value={s.overdue} sub={`${s.withDueDate} punya deadline`} accent={s.overdue > 0 ? 'text-red-400' : 'text-emerald-400'} />
+        <KpiCard label="Due Soon" value={s.dueSoon} sub="jatuh tempo ≤ 2 hari" accent={s.dueSoon > 0 ? 'text-amber-400' : 'text-emerald-400'} />
+        <KpiCard label="On-Time" value={`${s.deadlineHealthRate}%`} sub={`${s.onTime} task aman`} accent={s.deadlineHealthRate >= 80 ? 'text-emerald-400' : s.deadlineHealthRate >= 50 ? 'text-amber-400' : 'text-red-400'} />
       </div>
 
       {/* Charts row */}

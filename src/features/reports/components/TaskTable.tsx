@@ -138,6 +138,7 @@ export default function TaskTable() {
                 ['title', 'Judul'],
                 ['status', 'Status'],
                 ['priority', 'Prioritas'],
+                ['dueDate', 'Deadline'],
                 ['createdAt', 'Dibuat'],
               ] as [keyof Task, string][]).map(([key, label]) => (
                 <th
@@ -155,7 +156,7 @@ export default function TaskTable() {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-slate-600">
+                <td colSpan={7} className="px-4 py-10 text-center text-slate-600">
                   Tidak ada task yang sesuai filter
                 </td>
               </tr>
@@ -199,6 +200,9 @@ export default function TaskTable() {
                     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${PRIORITY_BADGE[task.priority]}`}>
                       {task.priority}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-slate-500">
+                    {task.dueDate ? task.dueDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                   </td>
                   <td className="px-4 py-3 text-slate-500">
                     {task.createdAt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}

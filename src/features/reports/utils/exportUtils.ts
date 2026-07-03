@@ -4,10 +4,27 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 // ─── Stats calculator ──────────────────────────────────────────────────────
+export function isTaskOverdue(task: Task, now = new Date()): boolean {
+  return !!task.dueDate && !task.deletedAt && task.status !== 'Done' && task.dueDate < now;
+}
+
+export function isTaskDueSoon(task: Task, now = new Date()): boolean {
+  if (!task.dueDate || task.deletedAt || task.status === 'Done' || isTaskOverdue(task, now)) return false;
+
+  const diffMs = task.dueDate.getTime() - now.getTime();
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+  return diffDays <= 2;
+}
+
 export function calculateSummary(tasks: Task[]): TaskSummary {
   const active = tasks.filter((t) => !t.deletedAt);
   const archived = tasks.filter((t) => !!t.deletedAt);
   const done = active.filter((t) => t.status === 'Done').length;
+  const withDueDate = active.filter((t) => !!t.dueDate).length;
+  const overdue = active.filter((t) => isTaskOverdue(t)).length;
+  const dueSoon = active.filter((t) => isTaskDueSoon(t)).length;
+  const onTime = active.filter((t) => !!t.dueDate && !isTaskOverdue(t)).length;
 
   const byStatus: Record<TaskStatus, number> = {
     'To Do': 0,
@@ -32,6 +49,11 @@ export function calculateSummary(tasks: Task[]): TaskSummary {
     active: active.length,
     archived: archived.length,
     completionRate: active.length > 0 ? Math.round((done / active.length) * 100) : 0,
+    withDueDate,
+    overdue,
+    dueSoon,
+    onTime,
+    deadlineHealthRate: withDueDate > 0 ? Math.round((onTime / withDueDate) * 100) : 0,
     byStatus,
     byPriority,
   };
@@ -59,6 +81,7 @@ export function exportToCsv(tasks: Task[]): void {
       escapeCsv(t.team ?? ''),
       escapeCsv(t.assigneeId ?? ''),
       escapeCsv(t.parentId ?? ''),
+      escapeCsv(t.dueDate?.toISOString() ?? ''),
       escapeCsv(t.createdAt.toISOString()),
       escapeCsv(t.deletedAt?.toISOString() ?? ''),
     ].join(',')
@@ -130,8 +153,9 @@ export function exportToPdf(tasks: Task[]): void {
       mainTask.status,
       mainTask.priority,
       mainTask.team || '-',
-      mainTask.assigneeId || '-',
-      mainTask.createdAt.toLocaleDateString('id-ID'),
+        mainTask.assigneeId || '-',
+        mainTask.dueDate ? mainTask.dueDate.toLocaleDateString('id-ID') : '-',
+        mainTask.createdAt.toLocaleDateString('id-ID'),
       mainTask.deletedAt ? 'Archived' : 'Active'
     ]);
 
@@ -145,6 +169,7 @@ export function exportToPdf(tasks: Task[]): void {
         child.priority,
         child.team || '-',
         child.assigneeId || '-',
+        child.dueDate ? child.dueDate.toLocaleDateString('id-ID') : '-',
         child.createdAt.toLocaleDateString('id-ID'),
         child.deletedAt ? 'Archived' : 'Active'
       ]);
@@ -153,7 +178,7 @@ export function exportToPdf(tasks: Task[]): void {
 
   autoTable(doc, {
     startY: 58,
-    head: [['Title', 'Status', 'Priority', 'Team', 'Assignee', 'Created', 'State']],
+    head: [['Title', 'Status', 'Priority', 'Team', 'Assignee', 'Due Date', 'Created', 'State']],
     body: tableData,
     theme: 'grid',
     styles: { fontSize: 8, cellPadding: 3 },

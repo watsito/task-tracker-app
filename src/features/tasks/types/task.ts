@@ -10,6 +10,7 @@ export interface Task {
   assigneeId: string | null;
   team?: string | null;
   parentId?: string | null;
+  dueDate?: Date | null;
   createdAt: Date;
   /** ISO timestamp set on soft-delete. Tasks with this field are hidden from the main board. */
   deletedAt?: Date;

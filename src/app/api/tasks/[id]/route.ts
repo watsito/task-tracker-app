@@ -17,6 +17,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     assigneeId?: string | null;
     parentId?: string | null;
     team?: string | null;
+    dueDate?: string | null;
     deletedAt?: string | null;
   };
 
@@ -27,9 +28,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       ...(body.description !== undefined ? { description: body.description.trim() } : {}),
       ...(body.status !== undefined ? { status: toDbStatus(body.status) } : {}),
       ...(body.priority !== undefined ? { priority: toDbPriority(body.priority) } : {}),
-      ...(body.assigneeId !== undefined ? { assigneeId: body.assigneeId } : {}),
-      ...(body.parentId !== undefined ? { parentId: body.parentId } : {}),
+      ...(body.assigneeId !== undefined ? { assignee: body.assigneeId ? { connect: { id: body.assigneeId } } : { disconnect: true } } : {}),
+      ...(body.parentId !== undefined ? { parent: body.parentId ? { connect: { id: body.parentId } } : { disconnect: true } } : {}),
       ...(body.team !== undefined ? { team: body.team } : {}),
+      ...(body.dueDate !== undefined ? { dueDate: body.dueDate ? new Date(body.dueDate) : null } : {}),
       ...(body.deletedAt !== undefined ? { deletedAt: body.deletedAt ? new Date(body.deletedAt) : null } : {}),
     },
   });

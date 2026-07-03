@@ -27,18 +27,18 @@ for (const user of users) {
 }
 
 const tasks = [
-  ['task-setup', 'Setup PostgreSQL Database', 'Konfigurasi database App_Tracker dan Prisma schema.', 'DONE', 'HIGH', 'Backend', 'user-admin', null],
-  ['task-api', 'Connect Task API to Database', 'Membuat API route untuk CRUD task menggunakan Prisma.', 'IN_PROGRESS', 'URGENT', 'Backend', 'user-admin', null],
-  ['task-ui', 'Polish Kanban Board UI', 'Rapikan tampilan board agar siap demo MVP.', 'REVIEW', 'MEDIUM', 'Frontend', 'user-member', null],
-  ['task-report', 'Validate Reports Export', 'Pastikan export CSV, JSON, dan PDF membaca data terbaru.', 'TODO', 'MEDIUM', 'QA', 'user-qa', null],
-  ['task-api-sub-1', 'Create GET /api/tasks', 'Endpoint list task dari PostgreSQL.', 'DONE', 'HIGH', 'Backend', 'user-admin', 'task-api'],
-  ['task-api-sub-2', 'Create POST /api/tasks', 'Endpoint tambah task ke PostgreSQL.', 'IN_PROGRESS', 'HIGH', 'Backend', 'user-admin', 'task-api'],
-  ['task-api-sub-3', 'Create PATCH /api/tasks/[id]', 'Endpoint update status, edit, dan soft delete task.', 'TODO', 'HIGH', 'Backend', 'user-admin', 'task-api'],
+  ['task-setup', 'Setup PostgreSQL Database', 'Konfigurasi database App_Tracker dan Prisma schema.', 'DONE', 'HIGH', 'Backend', 'user-admin', null, '2026-07-01'],
+  ['task-api', 'Connect Task API to Database', 'Membuat API route untuk CRUD task menggunakan Prisma.', 'IN_PROGRESS', 'URGENT', 'Backend', 'user-admin', null, '2026-07-05'],
+  ['task-ui', 'Polish Kanban Board UI', 'Rapikan tampilan board agar siap demo MVP.', 'REVIEW', 'MEDIUM', 'Frontend', 'user-member', null, '2026-07-08'],
+  ['task-report', 'Validate Reports Export', 'Pastikan export CSV, JSON, dan PDF membaca data terbaru.', 'TODO', 'MEDIUM', 'QA', 'user-qa', null, '2026-07-10'],
+  ['task-api-sub-1', 'Create GET /api/tasks', 'Endpoint list task dari PostgreSQL.', 'DONE', 'HIGH', 'Backend', 'user-admin', 'task-api', '2026-07-03'],
+  ['task-api-sub-2', 'Create POST /api/tasks', 'Endpoint tambah task ke PostgreSQL.', 'IN_PROGRESS', 'HIGH', 'Backend', 'user-admin', 'task-api', '2026-07-04'],
+  ['task-api-sub-3', 'Create PATCH /api/tasks/[id]', 'Endpoint update status, edit, dan soft delete task.', 'TODO', 'HIGH', 'Backend', 'user-admin', 'task-api', '2026-07-06'],
 ];
 
 for (const task of tasks) {
   await client.query(
-    'INSERT INTO tasks (id, title, description, status, priority, team, "assigneeId", "parentId", "createdAt", "updatedAt") VALUES ($1, $2, $3, $4::"TaskStatus", $5::"TaskPriority", $6, $7, $8, NOW(), NOW())',
+    'INSERT INTO tasks (id, title, description, status, priority, team, "assigneeId", "parentId", "dueDate", "createdAt", "updatedAt") VALUES ($1, $2, $3, $4::"TaskStatus", $5::"TaskPriority", $6, $7, $8, $9::timestamp, NOW(), NOW())',
     task
   );
 }

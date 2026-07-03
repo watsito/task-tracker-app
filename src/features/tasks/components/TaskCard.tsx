@@ -4,6 +4,7 @@ import { Task, TaskPriority, TaskStatus } from '../types/task';
 import { useTaskStore } from '../store/taskStore';
 import { useIntegrationStore } from '@/features/integrations/store/integrationStore';
 import SyncStatusBadge from '@/features/integrations/components/SyncStatusBadge';
+import { isTaskDueSoon } from '@/features/reports/utils/exportUtils';
 import { useDraggable } from '@dnd-kit/core';
 
 // ─── Priority badge config ─────────────────────────────────────────────────
@@ -92,6 +93,9 @@ export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
   const completedChildTasks = childTasks.filter((t) => t.status === 'Done');
   const visibleChildTasks = childTasks.slice(0, 4);
   const remainingChildTasks = childTasks.length - visibleChildTasks.length;
+  const isOverdue = !!task.dueDate && task.status !== 'Done' && task.dueDate < new Date();
+  const isDueSoon = isTaskDueSoon(task);
+  const formattedDueDate = task.dueDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
 
   return (
     <article
@@ -116,6 +120,11 @@ export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
           {task.team && (
             <span className="inline-flex items-center rounded-full border border-slate-500/30 bg-slate-500/10 px-2 py-0.5 text-[10px] font-medium text-slate-300">
               {task.team}
+            </span>
+          )}
+          {task.dueDate && (
+            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${isOverdue ? 'border-red-500/30 bg-red-500/15 text-red-400' : isDueSoon ? 'border-amber-500/30 bg-amber-500/15 text-amber-300' : 'border-indigo-500/30 bg-indigo-500/15 text-indigo-300'}`}>
+              {isOverdue ? 'Overdue' : isDueSoon ? 'Due Soon' : formattedDueDate}
             </span>
           )}
           <SyncStatusBadge status={syncStatus} />

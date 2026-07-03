@@ -5,6 +5,11 @@ export interface TaskSummary {
   active: number;
   archived: number;
   completionRate: number; // 0–100
+  withDueDate: number;
+  overdue: number;
+  dueSoon: number;
+  onTime: number;
+  deadlineHealthRate: number;
   byStatus: Record<TaskStatus, number>;
   byPriority: Record<TaskPriority, number>;
 }
@@ -28,6 +33,7 @@ export const CSV_COLUMNS = [
   'team',
   'assigneeId',
   'parentId',
+  'dueDate',
   'createdAt',
   'deletedAt',
 ] as const;

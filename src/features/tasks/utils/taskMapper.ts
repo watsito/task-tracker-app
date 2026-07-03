@@ -56,6 +56,7 @@ export function toAppTask(task: DbTask): AppTask {
     assigneeId: task.assigneeId,
     team: task.team,
     parentId: task.parentId,
+    dueDate: task.dueDate,
     createdAt: task.createdAt,
     deletedAt: task.deletedAt ?? undefined,
   };
