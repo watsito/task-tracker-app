@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import type { User } from '@/generated/prisma/client';
-import type { AppUser } from '@/features/tasks/types/user';
+import type { AppUser, UserPermissions } from '@/features/tasks/types/user';
 import { prisma } from './prisma';
 
 export const SESSION_COOKIE_NAME = 'task_tracker_session';
@@ -11,6 +11,7 @@ export function toAppUser(user: User): AppUser {
     name: user.name,
     email: user.email,
     role: user.role === 'ADMIN' ? 'admin' : 'member',
+    permissions: (user.permissions as UserPermissions | null) ?? undefined,
   };
 }
 
@@ -34,7 +35,11 @@ export async function getCurrentUser(): Promise<User | null> {
 export async function requireAdmin(): Promise<User> {
   const user = await getCurrentUser();
 
-  if (!user || user.role !== 'ADMIN') {
+  if (!user) {
+    throw new Error('Not authenticated');
+  }
+
+  if (user.role !== 'ADMIN') {
     throw new Error('Forbidden');
   }
 

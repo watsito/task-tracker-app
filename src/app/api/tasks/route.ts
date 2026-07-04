@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { toAppTask, toDbPriority, toDbStatus } from '@/features/tasks/utils/taskMapper';
+import { createAuditLog } from '@/lib/audit';
 import type { TaskPriority, TaskStatus } from '@/features/tasks/types/task';
 
 export async function GET() {
@@ -21,6 +22,8 @@ export async function POST(request: NextRequest) {
       assigneeId?: string | null;
       parentId?: string | null;
       team?: string | null;
+      projectId?: string | null;
+      milestoneId?: string | null;
       dueDate?: string | null;
     };
 
@@ -42,9 +45,18 @@ export async function POST(request: NextRequest) {
         priority: toDbPriority(body.priority ?? 'Medium'),
         ...(body.assigneeId ? { assignee: { connect: { id: body.assigneeId } } } : {}),
         ...(body.parentId ? { parent: { connect: { id: body.parentId } } } : {}),
+        ...(body.projectId ? { project: { connect: { id: body.projectId } } } : {}),
+        ...(body.milestoneId ? { milestone: { connect: { id: body.milestoneId } } } : {}),
         team: body.team ?? null,
         dueDate,
       },
+    });
+
+    await createAuditLog(task.id, 'created', null, {
+      title: task.title,
+      status: body.status ?? 'To Do',
+      priority: body.priority ?? 'Medium',
+      team: body.team ?? null,
     });
 
     return NextResponse.json(toAppTask(task), { status: 201 });

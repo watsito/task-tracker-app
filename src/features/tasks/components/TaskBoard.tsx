@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTaskStore } from '../store/taskStore';
 import { useAuthStore } from '../store/authStore';
 import { TaskStatus, TaskPriority, Task } from '../types/task';
+import { Milestone, Project } from '@/features/projects/types/project';
 import TaskCard from './TaskCard';
 import { isTaskDueSoon, isTaskOverdue } from '@/features/reports/utils/exportUtils';
 import {
@@ -82,6 +83,43 @@ interface TaskModalProps {
   onClose: () => void;
 }
 
+const ACTION_LABELS: Record<string, string> = {
+  created: 'membuat task',
+  status_changed: 'mengubah status',
+  priority_changed: 'mengubah prioritas',
+  assignee_changed: 'mengubah assignee',
+  team_changed: 'mengubah tim',
+  title_changed: 'mengubah judul',
+  archived: 'mengarsipkan task',
+  restored: 'memulihkan task',
+};
+
+function AuditLogItem({ log }: { log: { action: string; oldValue: unknown; newValue: unknown; createdAt: string; user: { name: string } } }) {
+  const date = new Date(log.createdAt);
+  const timeStr = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  const actionLabel = ACTION_LABELS[log.action] || log.action;
+
+  let detail = '';
+  if (log.action === 'status_changed' || log.action === 'priority_changed') {
+    detail = `: ${log.oldValue} → ${log.newValue}`;
+  } else if (log.action === 'title_changed') {
+    detail = `: "${String(log.oldValue).slice(0, 30)}" → "${String(log.newValue).slice(0, 30)}"`;
+  }
+
+  return (
+    <div className="flex items-start gap-2.5 rounded-lg bg-white/[0.02] px-3 py-2">
+      <div className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
+      <div className="min-w-0 flex-1">
+        <p className="text-xs text-slate-300">
+          <span className="font-semibold text-slate-200">{log.user.name}</span>{' '}
+          {actionLabel}{detail}
+        </p>
+        <p className="mt-0.5 text-[10px] text-slate-500">{timeStr}</p>
+      </div>
+    </div>
+  );
+}
+
 function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
   const { tasks, addTask, updateTask } = useTaskStore();
   const [title, setTitle] = useState(editTask?.title || '');
@@ -89,13 +127,35 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
   const [priority, setPriority] = useState<TaskPriority>(editTask?.priority || 'Medium');
   const [status, setStatus] = useState<TaskStatus>(editTask?.status || defaultStatus);
   const [team, setTeam] = useState<string>(editTask?.team || '');
+  const [projectId, setProjectId] = useState<string>(editTask?.projectId || '');
+  const [milestoneId, setMilestoneId] = useState<string>(editTask?.milestoneId || '');
   const [dueDate, setDueDate] = useState<string>(editTask?.dueDate ? editTask.dueDate.toISOString().slice(0, 10) : '');
   const [parentId, setParentId] = useState<string>(editTask?.parentId || '');
+  const [projects, setProjects] = useState<(Project & { milestones: Milestone[] })[]>([]);
+  const [auditLogs, setAuditLogs] = useState<{ id: string; action: string; oldValue: unknown; newValue: unknown; createdAt: string; user: { name: string } }[]>([]);
+  const [showAudit, setShowAudit] = useState(false);
   
   const availableParents = tasks.filter(t => 
     t.id !== editTask?.id && 
     !t.parentId
   );
+  const selectedProject = projects.find((project) => project.id === projectId);
+
+  useEffect(() => {
+    fetch('/api/projects')
+      .then((response) => response.ok ? response.json() : [])
+      .then((data: (Project & { milestones: Milestone[] })[]) => setProjects(data))
+      .catch(() => setProjects([]));
+  }, []);
+
+  useEffect(() => {
+    if (editTask?.id) {
+      fetch(`/api/audit-logs?taskId=${editTask.id}`)
+        .then((r) => r.ok ? r.json() : [])
+        .then((data) => { if (Array.isArray(data)) setAuditLogs(data); })
+        .catch(() => {});
+    }
+  }, [editTask?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,9 +165,9 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
     const finalDueDate = dueDate ? new Date(`${dueDate}T23:59:59`) : null;
     
     if (editTask) {
-      updateTask(editTask.id, { title: title.trim(), description: description.trim(), status, priority, team: team || null, parentId: finalParentId, dueDate: finalDueDate });
+      updateTask(editTask.id, { title: title.trim(), description: description.trim(), status, priority, team: team || null, parentId: finalParentId, projectId: projectId || null, milestoneId: milestoneId || null, dueDate: finalDueDate });
     } else {
-      await addTask({ title: title.trim(), description: description.trim(), status, priority, assigneeId: null, parentId: finalParentId, team: team || null, dueDate: finalDueDate });
+      await addTask({ title: title.trim(), description: description.trim(), status, priority, assigneeId: null, parentId: finalParentId, team: team || null, projectId: projectId || null, milestoneId: milestoneId || null, dueDate: finalDueDate });
     }
 
     onClose();
@@ -194,6 +254,41 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
             </select>
           </div>
 
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="new-task-project" className="text-xs font-medium text-slate-400">Project</label>
+              <select
+                id="new-task-project"
+                value={projectId}
+                onChange={(e) => {
+                  setProjectId(e.target.value);
+                  setMilestoneId('');
+                }}
+                className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500/60"
+              >
+                <option value="">-- No Project --</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>{project.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="new-task-milestone" className="text-xs font-medium text-slate-400">Milestone</label>
+              <select
+                id="new-task-milestone"
+                value={milestoneId}
+                onChange={(e) => setMilestoneId(e.target.value)}
+                disabled={!selectedProject}
+                className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500/60 disabled:opacity-50"
+              >
+                <option value="">-- No Milestone --</option>
+                {selectedProject?.milestones.map((milestone) => (
+                  <option key={milestone.id} value={milestone.id}>{milestone.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div className="flex flex-col gap-1.5">
             <label htmlFor="new-task-due-date" className="text-xs font-medium text-slate-400">Deadline</label>
             <input
@@ -235,10 +330,33 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
               id="submit-new-task"
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-500 active:scale-95"
             >
-              Create Task
+              {editTask ? 'Save Changes' : 'Create Task'}
             </button>
           </div>
         </form>
+
+        {/* Audit Trail */}
+        {editTask && auditLogs.length > 0 && (
+          <div className="mt-4 border-t border-white/[0.06] pt-4">
+            <button
+              type="button"
+              onClick={() => setShowAudit((v) => !v)}
+              className="flex w-full items-center justify-between text-xs font-semibold text-slate-400 transition hover:text-slate-200"
+            >
+              <span>Riwayat Perubahan ({auditLogs.length})</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`transition-transform ${showAudit ? 'rotate-180' : ''}`}>
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            {showAudit && (
+              <div className="mt-3 max-h-48 space-y-2 overflow-y-auto pr-1">
+                {auditLogs.map((log) => (
+                  <AuditLogItem key={log.id} log={log} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -252,6 +370,7 @@ export default function TaskBoard() {
 
   const [modalState, setModalState] = useState<{ type: 'add', status: TaskStatus } | { type: 'edit', task: Task } | null>(null);
   const [activeTab, setActiveTab] = useState<TaskStatus>('To Do');
+  const [viewMode, setViewMode] = useState<'board' | 'dashboard'>('board');
   
   // Advanced Filtering States
   const [filterMyTasks, setFilterMyTasks] = useState(false);
@@ -296,34 +415,65 @@ export default function TaskBoard() {
       {/* Board header row */}
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-100">
-            Project Board
-          </h1>
-          <p className="mt-0.5 text-sm text-slate-400">
-            {activeTasks.length} active task{activeTasks.length !== 1 ? 's' : ''}
-            {isAdmin && deletedCount > 0 && (
-              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-xs text-red-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
-                {deletedCount} archived
-              </span>
-            )}
-          </p>
-          {(overdueCount > 0 || dueSoonCount > 0) && (
-            <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold">
-              {overdueCount > 0 && (
-                <span className="rounded-full border border-red-500/25 bg-red-500/10 px-2.5 py-1 text-red-300">
-                  {overdueCount} overdue
-                </span>
-              )}
-              {dueSoonCount > 0 && (
-                <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-amber-300">
-                  {dueSoonCount} due soon
-                </span>
-              )}
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-slate-100">
+              {viewMode === 'board' ? 'Project Board' : 'Dashboard'}
+            </h1>
+            <div className="flex rounded-xl border border-white/10 bg-white/5 p-0.5">
+              <button
+                onClick={() => setViewMode('board')}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  viewMode === 'board'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <BoardIcon />
+                Board
+              </button>
+              <button
+                onClick={() => setViewMode('dashboard')}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  viewMode === 'dashboard'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <ChartIcon />
+                Dashboard
+              </button>
             </div>
+          </div>
+          {viewMode === 'board' && (
+            <>
+              <p className="mt-0.5 text-sm text-slate-400">
+                {activeTasks.length} active task{activeTasks.length !== 1 ? 's' : ''}
+                {isAdmin && deletedCount > 0 && (
+                  <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-xs text-red-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                    {deletedCount} archived
+                  </span>
+                )}
+              </p>
+              {(overdueCount > 0 || dueSoonCount > 0) && (
+                <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold">
+                  {overdueCount > 0 && (
+                    <span className="rounded-full border border-red-500/25 bg-red-500/10 px-2.5 py-1 text-red-300">
+                      {overdueCount} overdue
+                    </span>
+                  )}
+                  {dueSoonCount > 0 && (
+                    <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-amber-300">
+                      {dueSoonCount} due soon
+                    </span>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
 
+        {viewMode === 'board' && (
         <div className="flex items-center gap-3">
           {/* Filters */}
           <div className="hidden sm:flex items-center gap-2 mr-2">
@@ -368,9 +518,11 @@ export default function TaskBoard() {
             Add Task
           </button>
         </div>
+        )}
       </div>
 
       {/* Mobile Tab Switcher */}
+      {viewMode === 'board' && (
       <div className="flex shrink-0 xl:hidden overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6 md:-mx-8 md:px-8">
         <div className="flex gap-2">
           {COLUMNS.map((col) => {
@@ -397,30 +549,36 @@ export default function TaskBoard() {
           })}
         </div>
       </div>
+      )}
 
-      {/* Kanban columns */}
-      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-        <div className="min-h-0 flex-1 overflow-hidden">
-          <div className="grid h-full min-h-0 grid-cols-1 gap-4 pb-4 xl:grid-cols-4">
-            {COLUMNS.map((col) => {
-              const colTasks = activeTasks.filter((t) => t.status === col.status);
-              const isActiveMobile = activeTab === col.status;
-              
-              return (
-                <DroppableColumn
-                  key={col.status}
-                  col={col}
-                  colTasks={colTasks}
-                  isActiveMobile={isActiveMobile}
-                  isAdmin={isAdmin}
-                  onAddClick={() => setModalState({ type: 'add', status: col.status })}
-                  onEditClick={(task) => setModalState({ type: 'edit', task })}
-                />
-              );
-            })}
+      {viewMode === 'board' ? (
+        /* Kanban columns */
+        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <div className="grid h-full min-h-0 grid-cols-1 gap-4 pb-4 xl:grid-cols-4">
+              {COLUMNS.map((col) => {
+                const colTasks = activeTasks.filter((t) => t.status === col.status);
+                const isActiveMobile = activeTab === col.status;
+                
+                return (
+                  <DroppableColumn
+                    key={col.status}
+                    col={col}
+                    colTasks={colTasks}
+                    isActiveMobile={isActiveMobile}
+                    isAdmin={isAdmin}
+                    onAddClick={() => setModalState({ type: 'add', status: col.status })}
+                    onEditClick={(task) => setModalState({ type: 'edit', task })}
+                  />
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </DndContext>
+        </DndContext>
+      ) : (
+        /* Dashboard view */
+        <DashboardView />
+      )}
 
       {/* Task Modal (Add/Edit) */}
       {modalState && (
@@ -497,5 +655,298 @@ function PlusIcon() {
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
       <path d="M8 2v12M2 8h12" />
     </svg>
+  );
+}
+
+function ChartIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 20V10" /><path d="M12 20V4" /><path d="M6 20v-6" />
+    </svg>
+  );
+}
+
+function BoardIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+      <rect x="1" y="1" width="6" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="9" y="1" width="6" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+// ─── Dashboard View ─────────────────────────────────────────────────────────
+
+import { Line, Doughnut } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend, Filler);
+
+interface LeadSourceEntry {
+  id: string;
+  team: string;
+  formType: string;
+  title: string;
+  monthLabel: string;
+  period: string;
+  channels: Record<string, number>;
+  totalLeads: number;
+  createdAt: string;
+}
+
+const CHANNEL_LABELS: Record<string, string> = {
+  email: 'Email', googleAds: 'Google Ads', metaAds: 'Meta Ads', tender: 'Tender',
+  socialMedia: 'Social Media', linkedin: 'Linkedin', referral: 'Referral',
+  inboundWa: 'Inbound WA', web: 'Web', ka: 'KA', mes: 'MES',
+  community: 'Community', other: 'Other',
+};
+
+const CHANNEL_ORDER = ['email', 'googleAds', 'metaAds', 'tender', 'socialMedia', 'linkedin', 'referral', 'inboundWa', 'web', 'ka', 'mes', 'community', 'other'];
+
+function DashboardView() {
+  const [entries, setEntries] = useState<LeadSourceEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/lead-sources')
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setEntries(data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-indigo-500" />
+      </div>
+    );
+  }
+
+  const totalLeads = entries.reduce((sum, e) => sum + e.totalLeads, 0);
+
+  const teamBreakdown: Record<string, number> = {};
+  entries.forEach((e) => {
+    teamBreakdown[e.team] = (teamBreakdown[e.team] || 0) + e.totalLeads;
+  });
+
+  const channelBreakdown: Record<string, number> = {};
+  entries.forEach((e) => {
+    Object.entries(e.channels).forEach(([ch, count]) => {
+      channelBreakdown[ch] = (channelBreakdown[ch] || 0) + count;
+    });
+  });
+
+  const chartLabels = CHANNEL_ORDER.filter((ch) => channelBreakdown[ch] > 0).map((ch) => CHANNEL_LABELS[ch] || ch);
+  const chartData = CHANNEL_ORDER.filter((ch) => channelBreakdown[ch] > 0).map((ch) => channelBreakdown[ch]);
+
+  const latestEntry = entries[0];
+
+  const doughnutColors = [
+    'rgba(99, 102, 241, 0.85)', 'rgba(168, 85, 247, 0.85)', 'rgba(236, 72, 153, 0.85)',
+    'rgba(245, 158, 11, 0.85)', 'rgba(16, 185, 129, 0.85)', 'rgba(59, 130, 246, 0.85)',
+    'rgba(239, 68, 68, 0.85)', 'rgba(139, 92, 246, 0.85)', 'rgba(20, 184, 166, 0.85)',
+    'rgba(251, 146, 60, 0.85)', 'rgba(34, 197, 94, 0.85)', 'rgba(168, 162, 158, 0.85)',
+    'rgba(14, 165, 233, 0.85)',
+  ];
+
+  const lineChartData = {
+    labels: chartLabels,
+    datasets: [
+      {
+        label: 'Leads',
+        data: chartData,
+        borderColor: 'rgba(99, 102, 241, 1)',
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        borderWidth: 2.5,
+        pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+        pointBorderColor: '#0f172a',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  };
+
+  const lineChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+        titleColor: '#e2e8f0',
+        bodyColor: '#cbd5e1',
+        borderColor: 'rgba(99, 102, 241, 0.3)',
+        borderWidth: 1,
+        cornerRadius: 12,
+        padding: 12,
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: '#94a3b8', font: { size: 11 }, maxRotation: 45 },
+      },
+      y: {
+        grid: { color: 'rgba(255,255,255,0.05)' },
+        ticks: { color: '#94a3b8', font: { size: 11 } },
+        beginAtZero: true,
+      },
+    },
+  };
+
+  const teamLabels = Object.keys(teamBreakdown).sort((a, b) => teamBreakdown[b] - teamBreakdown[a]);
+  const teamData = teamLabels.map((t) => teamBreakdown[t]);
+
+  const doughnutChartData = {
+    labels: teamLabels,
+    datasets: [
+      {
+        data: teamData,
+        backgroundColor: doughnutColors.slice(0, teamLabels.length),
+        borderColor: '#0f172a',
+        borderWidth: 3,
+        hoverOffset: 8,
+      },
+    ],
+  };
+
+  const doughnutChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: { color: '#94a3b8', padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 11 } },
+      },
+      tooltip: {
+        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+        titleColor: '#e2e8f0',
+        bodyColor: '#cbd5e1',
+        borderColor: 'rgba(99, 102, 241, 0.3)',
+        borderWidth: 1,
+        cornerRadius: 12,
+        padding: 12,
+      },
+    },
+  };
+
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto pb-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-white/[0.08] bg-slate-900/80 p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Leads</p>
+          <p className="mt-2 text-3xl font-black tabular-nums text-white">{totalLeads}</p>
+          <p className="mt-3 text-xs text-slate-500">dari {entries.length} entri</p>
+        </div>
+        <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400/70">Tim Aktif</p>
+          <p className="mt-2 text-3xl font-black tabular-nums text-indigo-400">{Object.keys(teamBreakdown).length}</p>
+          <p className="mt-3 text-xs text-indigo-400/60">tim yang input data</p>
+        </div>
+        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400/70">Channel Aktif</p>
+          <p className="mt-2 text-3xl font-black tabular-nums text-emerald-400">{Object.keys(channelBreakdown).length}</p>
+          <p className="mt-3 text-xs text-emerald-400/60">sumber leads</p>
+        </div>
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-amber-400/70">Rata-rata</p>
+          <p className="mt-2 text-3xl font-black tabular-nums text-amber-400">{entries.length > 0 ? Math.round(totalLeads / entries.length) : 0}</p>
+          <p className="mt-3 text-xs text-amber-400/60">leads per entri</p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <div className="rounded-2xl border border-white/[0.08] bg-slate-900/80 p-5 lg:col-span-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-slate-100">
+                {latestEntry ? `Sumber Leads Periode ${latestEntry.period}` : 'Sumber Leads'}
+              </h3>
+              <p className="mt-1 text-xs text-slate-500">Jumlah Leads = {totalLeads}</p>
+            </div>
+            <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-1.5">
+              <span className="text-xs font-bold text-indigo-300">{entries.length} entri</span>
+            </div>
+          </div>
+          <div className="mt-5 h-72">
+            {chartLabels.length > 0 ? (
+              <Line data={lineChartData} options={lineChartOptions} />
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-sm text-slate-500">Belum ada data. Simpan data dari form terlebih dahulu.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-white/[0.08] bg-slate-900/80 p-5">
+          <h3 className="text-sm font-bold text-slate-100">Distribusi per Tim</h3>
+          <div className="mt-4 h-64">
+            {teamLabels.length > 0 ? (
+              <Doughnut data={doughnutChartData} options={doughnutChartOptions} />
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-sm text-slate-500">Belum ada data.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-white/[0.08] bg-slate-900/80 p-5">
+          <h3 className="text-sm font-bold text-slate-100">Top Channels</h3>
+          <div className="mt-4 space-y-2.5">
+            {Object.entries(channelBreakdown)
+              .sort(([, a], [, b]) => b - a)
+              .slice(0, 6)
+              .map(([ch, count]) => (
+                <div key={ch} className="flex items-center gap-3">
+                  <span className="w-28 text-xs font-medium text-slate-400">{CHANNEL_LABELS[ch] || ch}</span>
+                  <div className="flex-1 h-2.5 overflow-hidden rounded-full bg-white/5">
+                    <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-600" style={{ width: totalLeads > 0 ? `${(count / totalLeads) * 100}%` : '0%' }} />
+                  </div>
+                  <span className="w-8 text-right text-xs font-bold tabular-nums text-slate-300">{count}</span>
+                </div>
+              ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-white/[0.08] bg-slate-900/80 p-5">
+          <h3 className="text-sm font-bold text-slate-100">Entri Terbaru</h3>
+          {entries.length === 0 ? (
+            <p className="mt-4 text-sm text-slate-500">Belum ada data.</p>
+          ) : (
+            <div className="mt-4 space-y-2">
+              {entries.slice(0, 5).map((e) => (
+                <div key={e.id} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-200">{e.title}</p>
+                    <p className="text-xs text-slate-500">{e.team} &middot; {e.monthLabel}</p>
+                  </div>
+                  <span className="ml-3 shrink-0 rounded-full bg-indigo-500/15 px-2.5 py-1 text-xs font-bold tabular-nums text-indigo-300">{e.totalLeads}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

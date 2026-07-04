@@ -1,9 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import AuthGuard from '@/features/tasks/components/AuthGuard';
 import AppHeader from '@/features/tasks/components/AppHeader';
-import { AppUser, UserRole } from '@/features/tasks/types/user';
+import {
+  AppUser,
+  UserRole,
+  TeamName,
+  TeamPermission,
+  PageKey,
+  TEAMS,
+  PAGES,
+  TEAM_LABELS,
+  PAGE_LABELS,
+  PERMISSION_LABELS,
+  PERMISSION_COLORS,
+} from '@/features/tasks/types/user';
 import { useAuthStore } from '@/features/tasks/store/authStore';
 
 export default function UsersPage() {
@@ -22,12 +34,22 @@ function UserManagement() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('member');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [userToEditPerms, setUserToEditPerms] = useState<AppUser | null>(null);
+  const [editingTeamPerms, setEditingTeamPerms] = useState<Record<string, TeamPermission>>({});
+  const [editingPageAccess, setEditingPageAccess] = useState<Record<string, boolean>>({});
+  const [savingPerms, setSavingPerms] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ message, type });
+    toastTimer.current = setTimeout(() => setToast(null), 3500);
+  }, []);
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -40,14 +62,12 @@ function UserManagement() {
         return response.json() as Promise<AppUser[]>;
       })
       .then(setUsers)
-      .catch(() => setError('Gagal memuat daftar user.'))
+      .catch(() => showToast('Gagal memuat daftar user.', 'error'))
       .finally(() => setIsLoading(false));
   }, [isAdmin]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError('');
-    setSuccess('');
     setIsSubmitting(true);
 
     try {
@@ -68,9 +88,9 @@ function UserManagement() {
       setEmail('');
       setPassword('');
       setRole('member');
-      setSuccess(`Akun ${createdUser.email} berhasil dibuat.`);
+      showToast(`Akun ${createdUser.email} berhasil dibuat.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal membuat user.');
+      showToast(err instanceof Error ? err.message : 'Gagal membuat user.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -79,8 +99,6 @@ function UserManagement() {
   const handleDelete = async () => {
     if (!userToDelete) return;
 
-    setError('');
-    setSuccess('');
     setDeletingUserId(userToDelete.id);
 
     try {
@@ -92,12 +110,67 @@ function UserManagement() {
       }
 
       setUsers((current) => current.filter((user) => user.id !== userToDelete.id));
-      setSuccess(`Akun ${userToDelete.email} berhasil dihapus.`);
+      showToast(`Akun ${userToDelete.email} berhasil dihapus.`);
       setUserToDelete(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal menghapus user.');
+      showToast(err instanceof Error ? err.message : 'Gagal menghapus user.', 'error');
     } finally {
       setDeletingUserId(null);
+    }
+  };
+
+  const openPermissionsModal = useCallback((user: AppUser) => {
+    const teamPerms: Record<string, TeamPermission> = {};
+    TEAMS.forEach((team) => {
+      teamPerms[team] = (user.permissions?.teams?.[team] as TeamPermission) ?? 'none';
+    });
+    const pageAccess: Record<string, boolean> = {};
+    PAGES.forEach((page) => {
+      // Default: all pages accessible except 'users' (admin-only page)
+      pageAccess[page] = user.permissions?.pages?.[page] ?? (page !== 'users');
+    });
+    setEditingTeamPerms(teamPerms);
+    setEditingPageAccess(pageAccess);
+    setUserToEditPerms(user);
+  }, []);
+
+  const setTeamPermission = useCallback((team: TeamName, perm: TeamPermission) => {
+    setEditingTeamPerms((prev) => ({ ...prev, [team]: perm }));
+  }, []);
+
+  const togglePageAccess = useCallback((page: PageKey) => {
+    setEditingPageAccess((prev) => ({ ...prev, [page]: !prev[page] }));
+  }, []);
+
+  const handleSavePermissions = async () => {
+    if (!userToEditPerms) return;
+    setSavingPerms(true);
+
+    try {
+      const response = await fetch(`/api/users/${userToEditPerms.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          permissions: {
+            teams: editingTeamPerms,
+            pages: editingPageAccess,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null) as { error?: string } | null;
+        throw new Error(data?.error ?? 'Gagal menyimpan permission.');
+      }
+
+      const updated = await response.json() as AppUser;
+      setUsers((current) => current.map((u) => (u.id === updated.id ? updated : u)));
+      showToast(`Permission untuk ${updated.name} berhasil disimpan.`);
+      setUserToEditPerms(null);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Gagal menyimpan permission.', 'error');
+    } finally {
+      setSavingPerms(false);
     }
   };
 
@@ -112,6 +185,7 @@ function UserManagement() {
   }
 
   return (
+    <>
     <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-5 py-10 md:px-8">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -151,9 +225,6 @@ function UserManagement() {
               </div>
             </Field>
 
-            {error && <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">{error}</div>}
-            {success && <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">{success}</div>}
-
             <button disabled={isSubmitting} className="mt-1 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60">
               {isSubmitting ? 'Membuat akun...' : 'Buat Akun'}
             </button>
@@ -183,6 +254,14 @@ function UserManagement() {
                   <span className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${user.role === 'admin' ? 'border-indigo-400/30 bg-indigo-500/15 text-indigo-300' : 'border-slate-500/30 bg-slate-500/10 text-slate-400'}`}>
                     {user.role}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => openPermissionsModal(user)}
+                    title="Kelola permission tim"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 transition hover:border-emerald-400/40 hover:bg-emerald-500/20"
+                  >
+                    <ShieldIcon />
+                  </button>
                   <button
                     type="button"
                     disabled={user.id === currentUser?.id || deletingUserId === user.id}
@@ -230,7 +309,186 @@ function UserManagement() {
           </div>
         </div>
       )}
+
+      {/* ─── Permissions Modal ─── */}
+      {userToEditPerms && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 bg-slate-950 shadow-2xl shadow-black/60">
+            {/* Header */}
+            <div className="sticky top-0 z-10 border-b border-white/[0.06] bg-slate-950/95 px-6 py-5 backdrop-blur-md">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
+                    <ShieldIcon />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-100">Kelola Permission</h2>
+                    <p className="mt-0.5 text-sm text-slate-400">
+                      Atur hak akses untuk <span className="font-semibold text-slate-200">{userToEditPerms.name}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setUserToEditPerms(null)}
+                  disabled={savingPerms}
+                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition hover:bg-white/10 hover:text-slate-200 disabled:opacity-50"
+                >
+                  <XIcon />
+                </button>
+              </div>
+            </div>
+
+            <div className="px-6 py-5">
+              {/* Team Permissions Section */}
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-500/15">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-indigo-400">
+                      <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M22 21v-2a4 4 0 00-3-3.87" />
+                      <path d="M16 3.13a4 4 0 010 7.75" />
+                    </svg>
+                  </div>
+                  <h3 className="text-sm font-semibold text-slate-100">Hak Akses Tim</h3>
+                </div>
+                <p className="mt-1 text-xs text-slate-500">Pilih level akses untuk setiap tim yang dikelola user ini.</p>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {TEAMS.map((team) => {
+                    const current = editingTeamPerms[team] ?? 'none';
+                    return (
+                      <div
+                        key={team}
+                        className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3 transition hover:bg-white/[0.04]"
+                      >
+                        <p className="text-sm font-medium text-slate-200">{TEAM_LABELS[team]}</p>
+                        <div className="mt-2.5 flex gap-1.5">
+                          {(['none', 'view', 'edit', 'admin'] as TeamPermission[]).map((perm) => (
+                            <button
+                              key={perm}
+                              type="button"
+                              onClick={() => setTeamPermission(team, perm)}
+                              className={`flex-1 rounded-lg border px-2 py-1.5 text-[10px] font-semibold capitalize transition ${
+                                current === perm
+                                  ? PERMISSION_COLORS[perm]
+                                  : 'border-white/10 bg-white/5 text-slate-500 hover:bg-white/10 hover:text-slate-300'
+                              }`}
+                            >
+                              {PERMISSION_LABELS[perm]}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Page Access Section */}
+              <div className="mt-6 border-t border-white/[0.06] pt-5">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-purple-500/15">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-400">
+                      <path d="M4 19V5" />
+                      <path d="M4 19h16" />
+                      <path d="M8 15l3-4 3 2 4-6" />
+                    </svg>
+                  </div>
+                  <h3 className="text-sm font-semibold text-slate-100">Hak Akses Halaman</h3>
+                </div>
+                <p className="mt-1 text-xs text-slate-500">Pilih halaman mana saja yang bisa diakses oleh user ini.</p>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {PAGES.map((page) => {
+                    const allowed = editingPageAccess[page] ?? (page !== 'users');
+                    return (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => togglePageAccess(page)}
+                        className={`flex items-center justify-between rounded-2xl border px-4 py-3 transition ${
+                          allowed
+                            ? 'border-emerald-400/20 bg-emerald-500/8 hover:bg-emerald-500/12'
+                            : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`flex h-6 w-6 items-center justify-center rounded-lg transition ${
+                            allowed
+                              ? 'bg-emerald-500/20 text-emerald-400'
+                              : 'bg-white/5 text-slate-600'
+                          }`}>
+                            {allowed ? <CheckIcon /> : <XIcon />}
+                          </div>
+                          <span className={`text-sm font-medium ${allowed ? 'text-slate-100' : 'text-slate-500'}`}>
+                            {PAGE_LABELS[page]}
+                          </span>
+                        </div>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${allowed ? 'text-emerald-400' : 'text-slate-600'}`}>
+                          {allowed ? 'Diizinkan' : 'Diblokir'}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="sticky bottom-0 border-t border-white/[0.06] bg-slate-950/95 px-6 py-4 backdrop-blur-md">
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setUserToEditPerms(null)}
+                  disabled={savingPerms}
+                  className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-400 transition hover:bg-white/5 hover:text-slate-200 disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePermissions}
+                  disabled={savingPerms}
+                  className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {savingPerms ? 'Menyimpan...' : 'Simpan Permission'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
+
+      {/* Toast notification */}
+      {toast && (
+        <div className={`fixed right-5 top-5 z-[60] flex items-center gap-3 rounded-2xl border px-5 py-3.5 shadow-2xl shadow-black/40 backdrop-blur-md transition-all duration-300 ${
+          toast.type === 'success'
+            ? 'border-emerald-400/20 bg-emerald-500/15 text-emerald-300'
+            : 'border-red-400/20 bg-red-500/15 text-red-300'
+        }`}>
+          <div className={`flex h-7 w-7 items-center justify-center rounded-xl ${
+            toast.type === 'success'
+              ? 'bg-emerald-500/20'
+              : 'bg-red-500/20'
+          }`}>
+            {toast.type === 'success' ? <CheckIcon /> : <XIcon />}
+          </div>
+          <p className="text-sm font-semibold">{toast.message}</p>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="ml-2 flex h-5 w-5 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-slate-200"
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+              <path d="M18 6L6 18" /><path d="M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -251,6 +509,32 @@ function TrashIcon() {
       <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
       <path d="M10 11v6" />
       <path d="M14 11v6" />
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 6L6 18" />
+      <path d="M6 6l12 12" />
     </svg>
   );
 }

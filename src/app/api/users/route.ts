@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import { Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin, toAppUser } from '@/lib/auth';
 import type { UserRole } from '@/features/tasks/types/user';
@@ -27,12 +28,14 @@ export async function POST(request: NextRequest) {
       email?: string;
       password?: string;
       role?: UserRole;
+      permissions?: Record<string, unknown>;
     };
 
     const name = body.name?.trim();
     const email = body.email?.trim().toLowerCase();
     const password = body.password ?? '';
     const role = body.role === 'admin' ? 'ADMIN' : 'MEMBER';
+    const permissions = body.permissions as Prisma.InputJsonValue | undefined;
 
     if (!name || !email || password.length < 8) {
       return NextResponse.json({ error: 'Name, valid email, and password min 8 chars are required' }, { status: 400 });
@@ -40,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { name, email, passwordHash, role },
+      data: { name, email, passwordHash, role, permissions },
     });
 
     return NextResponse.json(toAppUser(user), { status: 201 });
