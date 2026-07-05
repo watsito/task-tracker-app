@@ -24,25 +24,25 @@ export default function ExportPanel() {
   const exportCount = getExportTasks().length;
 
   return (
-    <div className="rounded-2xl border border-white/[0.07] bg-slate-900/80 p-5">
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.07] dark:bg-slate-900/80">
       <div className="mb-4 flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-700 shadow-lg shadow-indigo-500/25">
           <ExportIcon />
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-slate-200">Export Data</h3>
-          <p className="text-xs text-slate-500">Unduh data task ke file lokal</p>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-200">Export Data</h3>
+          <p className="text-xs text-gray-500 dark:text-slate-500">Unduh data task ke file lokal</p>
         </div>
       </div>
 
       {/* Options */}
-      <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3.5 py-2.5">
+      <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 dark:border-white/[0.06] dark:bg-white/[0.03]">
         <button
           id="include-archived-toggle"
           type="button"
           onClick={() => setIncludeArchived((v) => !v)}
           className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${
-            includeArchived ? 'bg-indigo-600' : 'bg-slate-700'
+            includeArchived ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-slate-700'
           }`}
         >
           <span
@@ -51,18 +51,18 @@ export default function ExportPanel() {
             }`}
           />
         </button>
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-gray-600 dark:text-slate-400">
           Sertakan task yang diarsipkan
           {includeArchived && (
-            <span className="ml-1.5 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-amber-400">
+            <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">
               +{tasks.filter((t) => !!t.deletedAt).length} task
             </span>
           )}
         </span>
       </div>
 
-      <p className="mb-3 text-xs text-slate-500">
-        Akan mengekspor <span className="font-semibold text-slate-300">{exportCount} task</span>
+      <p className="mb-3 text-xs text-gray-500 dark:text-slate-500">
+        Akan mengekspor <span className="font-semibold text-gray-700 dark:text-slate-300">{exportCount} task</span>
       </p>
 
       {/* Export buttons */}
@@ -71,7 +71,7 @@ export default function ExportPanel() {
         <button
           id="export-csv-btn"
           onClick={() => handleExport('csv')}
-          className="flex flex-1 items-center justify-center gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-400 transition-all duration-150 hover:bg-emerald-500/20 active:scale-95"
+          className="flex flex-1 items-center justify-center gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition-all duration-150 hover:bg-emerald-100 active:scale-95 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20"
         >
           {justExported === 'csv' ? <CheckIcon /> : <CsvIcon />}
           {justExported === 'csv' ? 'Berhasil!' : 'CSV'}
@@ -81,7 +81,7 @@ export default function ExportPanel() {
         <button
           id="export-json-btn"
           onClick={() => handleExport('json')}
-          className="flex flex-1 items-center justify-center gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-400 transition-all duration-150 hover:bg-amber-500/20 active:scale-95"
+          className="flex flex-1 items-center justify-center gap-2.5 rounded-xl border border-amber-500/30 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 transition-all duration-150 hover:bg-amber-100 active:scale-95 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20"
         >
           {justExported === 'json' ? <CheckIcon /> : <JsonIcon />}
           {justExported === 'json' ? 'Berhasil!' : 'JSON'}
@@ -91,7 +91,7 @@ export default function ExportPanel() {
         <button
           id="export-pdf-btn"
           onClick={() => handleExport('pdf')}
-          className="flex flex-1 items-center justify-center gap-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-400 transition-all duration-150 hover:bg-rose-500/20 active:scale-95"
+          className="flex flex-1 items-center justify-center gap-2.5 rounded-xl border border-rose-500/30 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-all duration-150 hover:bg-rose-100 active:scale-95 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20"
         >
           {justExported === 'pdf' ? <CheckIcon /> : <PdfIcon />}
           {justExported === 'pdf' ? 'Berhasil!' : 'PDF'}
@@ -100,10 +100,10 @@ export default function ExportPanel() {
 
       {/* Format info */}
       <details className="mt-3">
-        <summary className="cursor-pointer text-xs text-slate-600 hover:text-slate-400">
+        <summary className="cursor-pointer text-xs text-gray-400 hover:text-gray-600 dark:text-slate-600 dark:hover:text-slate-400">
           Lihat format kolom CSV
         </summary>
-        <code className="mt-2 block rounded-lg bg-black/30 px-3 py-2 text-[10px] leading-5 text-slate-400">
+        <code className="mt-2 block rounded-lg bg-gray-100 px-3 py-2 text-[10px] leading-5 text-gray-600 dark:bg-black/30 dark:text-slate-400">
           id, title, description, status, priority, assigneeId, createdAt, deletedAt
         </code>
       </details>

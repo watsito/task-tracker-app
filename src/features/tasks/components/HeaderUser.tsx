@@ -43,17 +43,17 @@ export default function HeaderUser() {
       <button
         id="header-user-btn"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 transition-all hover:border-white/20 hover:bg-white/10"
+        className="flex items-center gap-2.5 rounded-xl border border-gray-300 bg-gray-100 px-2.5 py-1.5 transition-all hover:border-gray-400 hover:bg-gray-200 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20 dark:hover:bg-white/10"
       >
         {/* Avatar */}
         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-[10px] font-bold text-white">
           {initials}
         </div>
         <div className="hidden flex-col items-start sm:flex">
-          <span className="text-xs font-semibold leading-tight text-slate-200">
+          <span className="text-xs font-semibold leading-tight text-gray-900 dark:text-slate-200">
             {currentUser.name}
           </span>
-          <span className={`text-[10px] font-medium leading-tight ${isAdmin ? 'text-indigo-400' : 'text-slate-500'}`}>
+          <span className={`text-[10px] font-medium leading-tight ${isAdmin ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-slate-500'}`}>
             {isAdmin ? '👑 Admin' : '👤 Member'}
           </span>
         </div>
@@ -62,36 +62,36 @@ export default function HeaderUser() {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-52 overflow-hidden rounded-xl border border-white/10 bg-slate-900 shadow-2xl shadow-black/50">
+        <div className="absolute right-0 top-full mt-2 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900 dark:shadow-black/50">
           {/* User info */}
-          <div className="border-b border-white/[0.06] px-4 py-3">
-            <p className="text-xs font-semibold text-slate-200">{currentUser.name}</p>
-            <p className="mt-0.5 text-[11px] text-slate-500">{currentUser.email}</p>
+          <div className="border-b border-gray-200 px-4 py-3 dark:border-white/[0.06]">
+            <p className="text-xs font-semibold text-gray-900 dark:text-slate-200">{currentUser.name}</p>
+            <p className="mt-0.5 text-[11px] text-gray-500 dark:text-slate-500">{currentUser.email}</p>
           </div>
 
           {/* Menu items */}
           <div className="p-1.5">
             <button
               id="dropdown-profile"
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-slate-400 transition hover:bg-white/5 hover:text-slate-200"
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-200"
             >
               <UserIcon />
               Profil Saya
             </button>
             <button
               id="dropdown-settings"
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-slate-400 transition hover:bg-white/5 hover:text-slate-200"
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-200"
             >
               <SettingsIcon />
               Pengaturan
             </button>
           </div>
 
-          <div className="border-t border-white/[0.06] p-1.5">
+          <div className="border-t border-gray-200 p-1.5 dark:border-white/[0.06]">
             <button
               id="logout-btn"
               onClick={handleLogout}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-300"
             >
               <LogoutIcon />
               Keluar
@@ -113,7 +113,7 @@ function ChevronIcon({ open }: { open: boolean }) {
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
-      className={`text-slate-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+      className={`text-gray-500 dark:text-slate-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
     >
       <path d="M4 6l4 4 4-4" />
     </svg>

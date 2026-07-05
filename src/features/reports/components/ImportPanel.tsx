@@ -65,15 +65,15 @@ export default function ImportPanel() {
   const isParsing = importState === 'parsing';
 
   return (
-    <div className="rounded-2xl border border-white/[0.07] bg-slate-900/80 p-5">
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.07] dark:bg-slate-900/80">
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-sky-600 to-blue-700 shadow-lg shadow-sky-500/25">
           <ImportIcon />
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-slate-200">Import Data</h3>
-          <p className="text-xs text-slate-500">Upload file CSV atau JSON untuk menambah task</p>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-200">Import Data</h3>
+          <p className="text-xs text-gray-500 dark:text-slate-500">Upload file CSV atau JSON untuk menambah task</p>
         </div>
       </div>
 
@@ -87,7 +87,7 @@ export default function ImportPanel() {
           className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-all duration-200 ${
             isDragging
               ? 'border-indigo-500/60 bg-indigo-500/10'
-              : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]'
+              : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100 dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20 dark:hover:bg-white/[0.04]'
           }`}
         >
           <input
@@ -100,19 +100,19 @@ export default function ImportPanel() {
           />
           {isParsing ? (
             <>
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-sky-400" />
-              <p className="text-sm text-slate-400">Memproses <span className="font-medium text-slate-200">{fileName}</span>…</p>
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-sky-400 dark:border-white/10" />
+              <p className="text-sm text-gray-500 dark:text-slate-400">Memproses <span className="font-medium text-gray-800 dark:text-slate-200">{fileName}</span>…</p>
             </>
           ) : (
             <>
-              <div className={`flex h-12 w-12 items-center justify-center rounded-xl border ${isDragging ? 'border-indigo-500/40 bg-indigo-500/20' : 'border-white/10 bg-white/5'}`}>
+              <div className={`flex h-12 w-12 items-center justify-center rounded-xl border ${isDragging ? 'border-indigo-500/40 bg-indigo-500/20' : 'border-gray-300 bg-gray-100 dark:border-white/10 dark:bg-white/5'}`}>
                 <UploadIcon isDragging={isDragging} />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-300">
+                <p className="text-sm font-medium text-gray-700 dark:text-slate-300">
                   {isDragging ? 'Lepaskan file di sini' : 'Drag & drop atau klik untuk pilih file'}
                 </p>
-                <p className="mt-1 text-xs text-slate-600">Mendukung .csv dan .json</p>
+                <p className="mt-1 text-xs text-gray-400 dark:text-slate-600">Mendukung .csv dan .json</p>
               </div>
             </>
           )}
@@ -125,17 +125,17 @@ export default function ImportPanel() {
           {/* Summary */}
           <div className={`flex items-start gap-3 rounded-xl border px-4 py-3.5 ${
             importState === 'error'
-              ? 'border-red-500/20 bg-red-500/10'
+              ? 'border-red-300 bg-red-50 dark:border-red-500/20 dark:bg-red-500/10'
               : result.errors.length > 0
-              ? 'border-amber-500/20 bg-amber-500/10'
-              : 'border-emerald-500/20 bg-emerald-500/10'
+              ? 'border-amber-300 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/10'
+              : 'border-emerald-300 bg-emerald-50 dark:border-emerald-500/20 dark:bg-emerald-500/10'
           }`}>
             <span className="text-lg">
               {importState === 'error' ? '❌' : result.errors.length > 0 ? '⚠️' : '✅'}
             </span>
             <div className="flex-1">
               <p className={`text-xs font-semibold ${
-                importState === 'error' ? 'text-red-400' : result.errors.length > 0 ? 'text-amber-400' : 'text-emerald-400'
+                importState === 'error' ? 'text-red-700 dark:text-red-400' : result.errors.length > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'
               }`}>
                 {importState === 'error' && result.imported === 0
                   ? 'Import Gagal'
@@ -143,7 +143,7 @@ export default function ImportPanel() {
                 {result.skipped > 0 && `, ${result.skipped} dilewati`}
               </p>
               {result.imported > 0 && (
-                <p className="mt-0.5 text-xs text-slate-500">
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-500">
                   Task baru telah ditambahkan ke Kanban board
                 </p>
               )}
@@ -153,12 +153,12 @@ export default function ImportPanel() {
           {/* Error list */}
           {result.errors.length > 0 && (
             <details className="mt-3" open={result.imported === 0}>
-              <summary className="cursor-pointer text-xs font-medium text-red-400 hover:text-red-300">
+              <summary className="cursor-pointer text-xs font-medium text-red-600 hover:text-red-500 dark:text-red-400 dark:hover:text-red-300">
                 {result.errors.length} error ditemukan
               </summary>
-              <ul className="mt-2 max-h-36 overflow-y-auto rounded-lg bg-black/30 px-3 py-2">
+              <ul className="mt-2 max-h-36 overflow-y-auto rounded-lg bg-gray-100 px-3 py-2 dark:bg-black/30">
                 {result.errors.map((err, i) => (
-                  <li key={i} className="py-0.5 text-[11px] text-red-400/80">
+                  <li key={i} className="py-0.5 text-[11px] text-red-600 dark:text-red-400/80">
                     • {err}
                   </li>
                 ))}
@@ -171,7 +171,7 @@ export default function ImportPanel() {
             <button
               id="import-reset-btn"
               onClick={reset}
-              className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:bg-white/5 hover:text-slate-200"
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-800 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-200"
             >
               Import Lagi
             </button>
@@ -181,8 +181,8 @@ export default function ImportPanel() {
 
       {/* Template download hint */}
       {importState === 'idle' && (
-        <p className="mt-3 text-[11px] text-slate-600">
-          Pastikan kolom CSV mengandung: <code className="text-slate-500">title, status, priority</code>
+        <p className="mt-3 text-[11px] text-gray-400 dark:text-slate-600">
+          Pastikan kolom CSV mengandung: <code className="text-gray-500 dark:text-slate-500">title, status, priority</code>
         </p>
       )}
     </div>

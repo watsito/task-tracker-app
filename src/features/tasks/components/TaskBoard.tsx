@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTaskStore } from '../store/taskStore';
 import { useAuthStore } from '../store/authStore';
+import { useTheme } from '@/contexts/ThemeContext';
 import { TaskStatus, TaskPriority, Task } from '../types/task';
 import { Milestone, Project } from '@/features/projects/types/project';
 import TaskCard from './TaskCard';
@@ -178,12 +179,12 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl shadow-black/50">
-        <h2 className="mb-5 text-base font-semibold text-slate-100">{editTask ? 'Edit Task' : 'New Task'}</h2>
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 dark:shadow-black/50">
+        <h2 className="mb-5 text-base font-semibold text-gray-900 dark:text-slate-100">{editTask ? 'Edit Task' : 'New Task'}</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {/* Title */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="new-task-title" className="text-xs font-medium text-slate-400">Title *</label>
+            <label htmlFor="new-task-title" className="text-xs font-medium text-gray-500 dark:text-slate-400">Title *</label>
             <input
               id="new-task-title"
               type="text"
@@ -191,32 +192,32 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="What needs to be done?"
               required
-              className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30"
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder-slate-500"
             />
           </div>
 
           {/* Description */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="new-task-description" className="text-xs font-medium text-slate-400">Description</label>
+            <label htmlFor="new-task-description" className="text-xs font-medium text-gray-500 dark:text-slate-400">Description</label>
             <textarea
               id="new-task-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional details..."
               rows={3}
-              className="resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30"
+              className="resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder-slate-500"
             />
           </div>
 
           {/* Status + Priority row */}
           <div className="flex gap-3">
             <div className="flex flex-1 flex-col gap-1.5">
-              <label htmlFor="new-task-status" className="text-xs font-medium text-slate-400">Status</label>
+              <label htmlFor="new-task-status" className="text-xs font-medium text-gray-500 dark:text-slate-400">Status</label>
               <select
                 id="new-task-status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as TaskStatus)}
-                className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500/60"
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500/60 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
               >
                 {COLUMNS.map((c) => (
                   <option key={c.status} value={c.status}>{c.label}</option>
@@ -224,12 +225,12 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
               </select>
             </div>
             <div className="flex flex-1 flex-col gap-1.5">
-              <label htmlFor="new-task-priority" className="text-xs font-medium text-slate-400">Priority</label>
+              <label htmlFor="new-task-priority" className="text-xs font-medium text-gray-500 dark:text-slate-400">Priority</label>
               <select
                 id="new-task-priority"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500/60"
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500/60 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
               >
                 {PRIORITIES.map((p) => (
                   <option key={p} value={p}>{p}</option>
@@ -240,12 +241,12 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
           
           {/* Team row */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="new-task-team" className="text-xs font-medium text-slate-400">Team</label>
+            <label htmlFor="new-task-team" className="text-xs font-medium text-gray-500 dark:text-slate-400">Team</label>
             <select
               id="new-task-team"
               value={team}
               onChange={(e) => setTeam(e.target.value)}
-              className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500/60"
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500/60 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
             >
               <option value="">-- No Team Assigned --</option>
               {TEAMS.map((t) => (
@@ -256,7 +257,7 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="new-task-project" className="text-xs font-medium text-slate-400">Project</label>
+              <label htmlFor="new-task-project" className="text-xs font-medium text-gray-500 dark:text-slate-400">Project</label>
               <select
                 id="new-task-project"
                 value={projectId}
@@ -264,7 +265,7 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
                   setProjectId(e.target.value);
                   setMilestoneId('');
                 }}
-                className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500/60"
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500/60 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
               >
                 <option value="">-- No Project --</option>
                 {projects.map((project) => (
@@ -273,13 +274,13 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="new-task-milestone" className="text-xs font-medium text-slate-400">Milestone</label>
+              <label htmlFor="new-task-milestone" className="text-xs font-medium text-gray-500 dark:text-slate-400">Milestone</label>
               <select
                 id="new-task-milestone"
                 value={milestoneId}
                 onChange={(e) => setMilestoneId(e.target.value)}
                 disabled={!selectedProject}
-                className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500/60 disabled:opacity-50"
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500/60 disabled:opacity-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
               >
                 <option value="">-- No Milestone --</option>
                 {selectedProject?.milestones.map((milestone) => (
@@ -290,24 +291,24 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="new-task-due-date" className="text-xs font-medium text-slate-400">Deadline</label>
+            <label htmlFor="new-task-due-date" className="text-xs font-medium text-gray-500 dark:text-slate-400">Deadline</label>
             <input
               id="new-task-due-date"
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500/60"
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500/60 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
             />
           </div>
 
           {/* Parent Task Selection */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="new-task-parent" className="text-xs font-medium text-slate-400">Jadikan Sub-tugas dari... (Opsional)</label>
+            <label htmlFor="new-task-parent" className="text-xs font-medium text-gray-500 dark:text-slate-400">Jadikan Sub-tugas dari... (Opsional)</label>
             <select
               id="new-task-parent"
               value={parentId}
               onChange={(e) => setParentId(e.target.value)}
-              className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500/60"
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500/60 dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
             >
               <option value="">-- Kosongkan jika ini Tugas Utama --</option>
               {availableParents.map(t => (
@@ -321,7 +322,7 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-slate-200"
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-800 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-200"
             >
               Cancel
             </button>
@@ -416,16 +417,16 @@ export default function TaskBoard() {
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-slate-100">
+            <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-slate-100">
               {viewMode === 'board' ? 'Project Board' : 'Dashboard'}
             </h1>
-            <div className="flex rounded-xl border border-white/10 bg-white/5 p-0.5">
+            <div className="flex rounded-xl border border-gray-200 bg-gray-100 p-0.5 dark:border-white/10 dark:bg-white/5">
               <button
                 onClick={() => setViewMode('board')}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                   viewMode === 'board'
                     ? 'bg-indigo-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : 'text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 <BoardIcon />
@@ -436,7 +437,7 @@ export default function TaskBoard() {
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                   viewMode === 'dashboard'
                     ? 'bg-indigo-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : 'text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 <ChartIcon />
@@ -449,8 +450,8 @@ export default function TaskBoard() {
               <p className="mt-0.5 text-sm text-slate-400">
                 {activeTasks.length} active task{activeTasks.length !== 1 ? 's' : ''}
                 {isAdmin && deletedCount > 0 && (
-                  <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-xs text-red-400">
-                    <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                  <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600 dark:bg-red-500/15 dark:text-red-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-red-500 dark:bg-red-400" />
                     {deletedCount} archived
                   </span>
                 )}
@@ -458,12 +459,12 @@ export default function TaskBoard() {
               {(overdueCount > 0 || dueSoonCount > 0) && (
                 <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold">
                   {overdueCount > 0 && (
-                    <span className="rounded-full border border-red-500/25 bg-red-500/10 px-2.5 py-1 text-red-300">
+                    <span className="rounded-full border border-red-300 bg-red-50 px-2.5 py-1 text-red-700 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-300">
                       {overdueCount} overdue
                     </span>
                   )}
                   {dueSoonCount > 0 && (
-                    <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-amber-300">
+                    <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
                       {dueSoonCount} due soon
                     </span>
                   )}
@@ -482,7 +483,7 @@ export default function TaskBoard() {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                 filterMyTasks 
                   ? 'bg-indigo-600 border-indigo-500 text-white shadow-md' 
-                  : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200'
+                  : 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200'
               }`}
             >
               My Tasks
@@ -492,7 +493,7 @@ export default function TaskBoard() {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                 filterUrgentOnly 
                   ? 'bg-red-500 border-red-400 text-white shadow-md' 
-                  : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200'
+                  : 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200'
               }`}
             >
               Urgent Only
@@ -502,7 +503,7 @@ export default function TaskBoard() {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                 filterOverdueOnly
                   ? 'bg-rose-600 border-rose-400 text-white shadow-md'
-                  : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200'
+                  : 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200'
               }`}
             >
               Overdue {overdueCount > 0 ? `(${overdueCount})` : ''}
@@ -613,8 +614,8 @@ function DroppableColumn({ col, colTasks, isActiveMobile, isAdmin, onAddClick, o
       ref={setNodeRef}
       id={`column-${col.status.toLowerCase().replace(/\s+/g, '-')}`}
       className={`h-full min-h-0 flex-col overflow-hidden rounded-2xl border transition-all duration-300 ${
-        isOver ? 'border-indigo-400 bg-slate-800/80' : `${col.borderColor} bg-slate-900/60`
-      } shadow-lg ${col.glowColor} backdrop-blur-sm ${isActiveMobile ? 'flex' : 'hidden xl:flex'}`}
+        isOver ? 'border-indigo-400 bg-indigo-50 dark:border-indigo-400 dark:bg-slate-800/80' : `${col.borderColor} bg-white dark:bg-slate-900/60`
+      } shadow-lg ${col.glowColor} ${isActiveMobile ? 'flex' : 'hidden xl:flex'}`}
     >
       {/* Column header */}
       <div className={`flex items-center justify-between rounded-t-2xl bg-gradient-to-r ${col.accentFrom} ${col.accentTo} px-4 py-3 shrink-0`}>
@@ -627,9 +628,9 @@ function DroppableColumn({ col, colTasks, isActiveMobile, isAdmin, onAddClick, o
       {/* Task list */}
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto overscroll-contain p-3">
         {colTasks.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-white/10 py-8 text-center mt-auto mb-auto">
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-gray-300 py-8 text-center mt-auto mb-auto dark:border-white/10">
             <span className="text-2xl opacity-30">📋</span>
-            <span className="text-xs text-slate-500">No tasks here</span>
+            <span className="text-xs text-gray-400 dark:text-slate-500">No tasks here</span>
           </div>
         ) : (
           colTasks.map((task) => (
@@ -641,7 +642,7 @@ function DroppableColumn({ col, colTasks, isActiveMobile, isAdmin, onAddClick, o
       {/* Column add button */}
       <button
         onClick={onAddClick}
-        className="m-3 mt-0 flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/10 py-2 text-xs font-medium text-slate-500 transition-colors hover:border-white/20 hover:text-slate-300 shrink-0"
+        className="m-3 mt-0 flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-gray-300 bg-gray-100/50 py-2 text-xs font-medium text-gray-500 transition-colors hover:border-gray-400 hover:bg-gray-200/50 hover:text-gray-700 dark:border-white/15 dark:bg-white/5 dark:text-slate-400 dark:hover:border-white/25 dark:hover:bg-white/10 dark:hover:text-slate-200 shrink-0"
       >
         <PlusIcon />
         Add task
@@ -717,6 +718,7 @@ const CHANNEL_ORDER = ['email', 'googleAds', 'metaAds', 'tender', 'socialMedia',
 function DashboardView() {
   const [entries, setEntries] = useState<LeadSourceEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const { theme } = useTheme();
 
   useEffect(() => {
     fetch('/api/lead-sources')
@@ -761,6 +763,8 @@ function DashboardView() {
     'rgba(14, 165, 233, 0.85)',
   ];
 
+  const isDark = theme === 'dark';
+
   const lineChartData = {
     labels: chartLabels,
     datasets: [
@@ -768,10 +772,10 @@ function DashboardView() {
         label: 'Leads',
         data: chartData,
         borderColor: 'rgba(99, 102, 241, 1)',
-        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        backgroundColor: isDark ? 'rgba(99, 102, 241, 0.1)' : 'rgba(99, 102, 241, 0.08)',
         borderWidth: 2.5,
         pointBackgroundColor: 'rgba(99, 102, 241, 1)',
-        pointBorderColor: '#0f172a',
+        pointBorderColor: isDark ? '#0f172a' : '#e5e7eb',
         pointBorderWidth: 2,
         pointRadius: 5,
         pointHoverRadius: 7,
@@ -787,9 +791,9 @@ function DashboardView() {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-        titleColor: '#e2e8f0',
-        bodyColor: '#cbd5e1',
+        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+        titleColor: isDark ? '#e2e8f0' : '#1a1a1a',
+        bodyColor: isDark ? '#cbd5e1' : '#4b5563',
         borderColor: 'rgba(99, 102, 241, 0.3)',
         borderWidth: 1,
         cornerRadius: 12,
@@ -799,11 +803,11 @@ function DashboardView() {
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: '#94a3b8', font: { size: 11 }, maxRotation: 45 },
+        ticks: { color: isDark ? '#94a3b8' : '#6b7280', font: { size: 11 }, maxRotation: 45 },
       },
       y: {
-        grid: { color: 'rgba(255,255,255,0.05)' },
-        ticks: { color: '#94a3b8', font: { size: 11 } },
+        grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)' },
+        ticks: { color: isDark ? '#94a3b8' : '#6b7280', font: { size: 11 } },
         beginAtZero: true,
       },
     },
@@ -818,7 +822,7 @@ function DashboardView() {
       {
         data: teamData,
         backgroundColor: doughnutColors.slice(0, teamLabels.length),
-        borderColor: '#0f172a',
+        borderColor: isDark ? '#0f172a' : '#ffffff',
         borderWidth: 3,
         hoverOffset: 8,
       },
@@ -832,12 +836,12 @@ function DashboardView() {
     plugins: {
       legend: {
         position: 'bottom' as const,
-        labels: { color: '#94a3b8', padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 11 } },
+        labels: { color: isDark ? '#94a3b8' : '#6b7280', padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 11 } },
       },
       tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-        titleColor: '#e2e8f0',
-        bodyColor: '#cbd5e1',
+        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+        titleColor: isDark ? '#e2e8f0' : '#1a1a1a',
+        bodyColor: isDark ? '#cbd5e1' : '#4b5563',
         borderColor: 'rgba(99, 102, 241, 0.3)',
         borderWidth: 1,
         cornerRadius: 12,
@@ -849,39 +853,39 @@ function DashboardView() {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto pb-4">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-white/[0.08] bg-slate-900/80 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Leads</p>
-          <p className="mt-2 text-3xl font-black tabular-nums text-white">{totalLeads}</p>
-          <p className="mt-3 text-xs text-slate-500">dari {entries.length} entri</p>
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-500">Total Leads</p>
+          <p className="mt-2 text-3xl font-black tabular-nums text-gray-900 dark:text-white">{totalLeads}</p>
+          <p className="mt-3 text-xs text-gray-500 dark:text-slate-500">dari {entries.length} entri</p>
         </div>
-        <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-400/70">Tim Aktif</p>
-          <p className="mt-2 text-3xl font-black tabular-nums text-indigo-400">{Object.keys(teamBreakdown).length}</p>
-          <p className="mt-3 text-xs text-indigo-400/60">tim yang input data</p>
+        <div className="rounded-2xl border border-indigo-300 bg-indigo-50 p-5 dark:border-indigo-500/20 dark:bg-indigo-500/5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600/70 dark:text-indigo-400/70">Tim Aktif</p>
+          <p className="mt-2 text-3xl font-black tabular-nums text-indigo-600 dark:text-indigo-400">{Object.keys(teamBreakdown).length}</p>
+          <p className="mt-3 text-xs text-indigo-600/60 dark:text-indigo-400/60">tim yang input data</p>
         </div>
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400/70">Channel Aktif</p>
-          <p className="mt-2 text-3xl font-black tabular-nums text-emerald-400">{Object.keys(channelBreakdown).length}</p>
-          <p className="mt-3 text-xs text-emerald-400/60">sumber leads</p>
+        <div className="rounded-2xl border border-emerald-300 bg-emerald-50 p-5 dark:border-emerald-500/20 dark:bg-emerald-500/5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600/70 dark:text-emerald-400/70">Channel Aktif</p>
+          <p className="mt-2 text-3xl font-black tabular-nums text-emerald-600 dark:text-emerald-400">{Object.keys(channelBreakdown).length}</p>
+          <p className="mt-3 text-xs text-emerald-600/60 dark:text-emerald-400/60">sumber leads</p>
         </div>
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-amber-400/70">Rata-rata</p>
-          <p className="mt-2 text-3xl font-black tabular-nums text-amber-400">{entries.length > 0 ? Math.round(totalLeads / entries.length) : 0}</p>
-          <p className="mt-3 text-xs text-amber-400/60">leads per entri</p>
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-500/20 dark:bg-amber-500/5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-amber-600/70 dark:text-amber-400/70">Rata-rata</p>
+          <p className="mt-2 text-3xl font-black tabular-nums text-amber-600 dark:text-amber-400">{entries.length > 0 ? Math.round(totalLeads / entries.length) : 0}</p>
+          <p className="mt-3 text-xs text-amber-600/60 dark:text-amber-400/60">leads per entri</p>
         </div>
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-white/[0.08] bg-slate-900/80 p-5 lg:col-span-2">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80 lg:col-span-2">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-slate-100">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">
                 {latestEntry ? `Sumber Leads Periode ${latestEntry.period}` : 'Sumber Leads'}
               </h3>
-              <p className="mt-1 text-xs text-slate-500">Jumlah Leads = {totalLeads}</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">Jumlah Leads = {totalLeads}</p>
             </div>
-            <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-1.5">
-              <span className="text-xs font-bold text-indigo-300">{entries.length} entri</span>
+            <div className="rounded-xl border border-indigo-300 bg-indigo-50 px-3 py-1.5 dark:border-indigo-500/20 dark:bg-indigo-500/10">
+              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-300">{entries.length} entri</span>
             </div>
           </div>
           <div className="mt-5 h-72">
@@ -889,20 +893,20 @@ function DashboardView() {
               <Line data={lineChartData} options={lineChartOptions} />
             ) : (
               <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-slate-500">Belum ada data. Simpan data dari form terlebih dahulu.</p>
+                <p className="text-sm text-gray-400 dark:text-slate-500">Belum ada data. Simpan data dari form terlebih dahulu.</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/[0.08] bg-slate-900/80 p-5">
-          <h3 className="text-sm font-bold text-slate-100">Distribusi per Tim</h3>
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+          <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Distribusi per Tim</h3>
           <div className="mt-4 h-64">
             {teamLabels.length > 0 ? (
               <Doughnut data={doughnutChartData} options={doughnutChartOptions} />
             ) : (
               <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-slate-500">Belum ada data.</p>
+                <p className="text-sm text-gray-400 dark:text-slate-500">Belum ada data.</p>
               </div>
             )}
           </div>
@@ -910,37 +914,37 @@ function DashboardView() {
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/[0.08] bg-slate-900/80 p-5">
-          <h3 className="text-sm font-bold text-slate-100">Top Channels</h3>
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+          <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Top Channels</h3>
           <div className="mt-4 space-y-2.5">
             {Object.entries(channelBreakdown)
               .sort(([, a], [, b]) => b - a)
               .slice(0, 6)
               .map(([ch, count]) => (
                 <div key={ch} className="flex items-center gap-3">
-                  <span className="w-28 text-xs font-medium text-slate-400">{CHANNEL_LABELS[ch] || ch}</span>
-                  <div className="flex-1 h-2.5 overflow-hidden rounded-full bg-white/5">
+                  <span className="w-28 text-xs font-medium text-gray-500 dark:text-slate-400">{CHANNEL_LABELS[ch] || ch}</span>
+                  <div className="flex-1 h-2.5 overflow-hidden rounded-full bg-gray-200 dark:bg-white/5">
                     <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-600" style={{ width: totalLeads > 0 ? `${(count / totalLeads) * 100}%` : '0%' }} />
                   </div>
-                  <span className="w-8 text-right text-xs font-bold tabular-nums text-slate-300">{count}</span>
+                  <span className="w-8 text-right text-xs font-bold tabular-nums text-gray-700 dark:text-slate-300">{count}</span>
                 </div>
               ))}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/[0.08] bg-slate-900/80 p-5">
-          <h3 className="text-sm font-bold text-slate-100">Entri Terbaru</h3>
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+          <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Entri Terbaru</h3>
           {entries.length === 0 ? (
-            <p className="mt-4 text-sm text-slate-500">Belum ada data.</p>
+            <p className="mt-4 text-sm text-gray-400 dark:text-slate-500">Belum ada data.</p>
           ) : (
             <div className="mt-4 space-y-2">
               {entries.slice(0, 5).map((e) => (
-                <div key={e.id} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+                <div key={e.id} className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-white/[0.06] dark:bg-white/[0.02]">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-200">{e.title}</p>
-                    <p className="text-xs text-slate-500">{e.team} &middot; {e.monthLabel}</p>
+                    <p className="truncate text-sm font-medium text-gray-800 dark:text-slate-200">{e.title}</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-500">{e.team} &middot; {e.monthLabel}</p>
                   </div>
-                  <span className="ml-3 shrink-0 rounded-full bg-indigo-500/15 px-2.5 py-1 text-xs font-bold tabular-nums text-indigo-300">{e.totalLeads}</span>
+                  <span className="ml-3 shrink-0 rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-bold tabular-nums text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">{e.totalLeads}</span>
                 </div>
               ))}
             </div>

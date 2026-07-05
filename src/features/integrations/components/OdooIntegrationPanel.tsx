@@ -17,7 +17,7 @@ function StatusDot({ status }: { status: string }) {
     connected: 'bg-emerald-400 shadow-emerald-400/50',
     connecting: 'bg-amber-400 shadow-amber-400/50 animate-pulse',
     error: 'bg-red-400 shadow-red-400/50',
-    disconnected: 'bg-slate-600',
+    disconnected: 'bg-gray-300 dark:bg-slate-600',
   };
   return (
     <span
@@ -69,12 +69,12 @@ export default function OdooIntegrationPanel() {
     setForm((prev) => ({ ...prev, [key]: value }));
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900">
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900">
       {/* Card header — always visible */}
       <button
         id="odoo-panel-toggle"
         onClick={() => setExpanded((v) => !v)}
-        className="flex w-full items-center justify-between px-5 py-4 transition-colors hover:bg-white/[0.03]"
+        className="flex w-full items-center justify-between px-5 py-4 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.03]"
       >
         <div className="flex items-center gap-3">
           {/* Odoo logo mark */}
@@ -83,10 +83,10 @@ export default function OdooIntegrationPanel() {
           </div>
           <div className="text-left">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-slate-100">Odoo</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-slate-100">Odoo</span>
               <StatusDot status={integrationStatus} />
               <span className={`text-xs font-medium capitalize ${
-                isConnected ? 'text-emerald-400' : integrationStatus === 'error' ? 'text-red-400' : 'text-slate-500'
+                isConnected ? 'text-emerald-600 dark:text-emerald-400' : integrationStatus === 'error' ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-slate-500'
               }`}>
                 {integrationStatus === 'connected'
                   ? 'Terhubung'
@@ -97,7 +97,7 @@ export default function OdooIntegrationPanel() {
                   : 'Belum terhubung'}
               </span>
             </div>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-500">
               Sinkronisasi task ke project.task Odoo via JSON-RPC API
             </p>
           </div>
@@ -117,12 +117,12 @@ export default function OdooIntegrationPanel() {
 
       {/* Expanded panel */}
       {expanded && (
-        <div className="border-t border-white/[0.06]">
+        <div className="border-t border-gray-200 dark:border-white/[0.06]">
           {/* Connection form */}
           <div className="grid gap-4 p-5 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-400">
-                URL Odoo <span className="text-slate-600">(https://...)</span>
+              <label className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                URL Odoo <span className="text-gray-400 dark:text-slate-600">(https://...)</span>
               </label>
               <input
                 id="odoo-url"
@@ -131,11 +131,11 @@ export default function OdooIntegrationPanel() {
                 onChange={(e) => handleField('url', e.target.value)}
                 placeholder="https://mycompany.odoo.com"
                 disabled={isConnected}
-                className="rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 disabled:opacity-50"
+                className="rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder-slate-600"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-400">Nama Database</label>
+              <label className="text-xs font-medium text-gray-500 dark:text-slate-400">Nama Database</label>
               <input
                 id="odoo-database"
                 type="text"
@@ -143,11 +143,11 @@ export default function OdooIntegrationPanel() {
                 onChange={(e) => handleField('database', e.target.value)}
                 placeholder="mycompany"
                 disabled={isConnected}
-                className="rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 disabled:opacity-50"
+                className="rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder-slate-600"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-400">Username / Email</label>
+              <label className="text-xs font-medium text-gray-500 dark:text-slate-400">Username / Email</label>
               <input
                 id="odoo-username"
                 type="email"
@@ -155,12 +155,12 @@ export default function OdooIntegrationPanel() {
                 onChange={(e) => handleField('username', e.target.value)}
                 placeholder="admin@mycompany.com"
                 disabled={isConnected}
-                className="rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 disabled:opacity-50"
+                className="rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder-slate-600"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-400">
-                API Key <span className="text-slate-600">(Settings → API Keys)</span>
+              <label className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                API Key <span className="text-gray-400 dark:text-slate-600">(Settings → API Keys)</span>
               </label>
               <div className="relative">
                 <input
@@ -170,12 +170,12 @@ export default function OdooIntegrationPanel() {
                   onChange={(e) => handleField('apiKey', e.target.value)}
                   placeholder="••••••••••••••••"
                   disabled={isConnected}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 pr-10 text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 disabled:opacity-50"
+                  className="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder-slate-600"
                 />
                 <button
                   type="button"
                   onClick={() => setShowApiKey((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300"
                 >
                   {showApiKey ? '🙈' : '👁'}
                 </button>
@@ -185,22 +185,22 @@ export default function OdooIntegrationPanel() {
 
           {/* Error message */}
           {connectionError && (
-            <div className="mx-5 mb-4 flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
-              <span className="mt-0.5 text-red-400">⚠</span>
+            <div className="mx-5 mb-4 flex items-start gap-2.5 rounded-xl border border-red-300 bg-red-50 px-4 py-3 dark:border-red-500/20 dark:bg-red-500/10">
+              <span className="mt-0.5 text-red-600 dark:text-red-400">⚠</span>
               <div>
-                <p className="text-xs font-semibold text-red-400">Koneksi Gagal</p>
-                <p className="mt-0.5 text-xs text-red-400/70">{connectionError}</p>
+                <p className="text-xs font-semibold text-red-700 dark:text-red-400">Koneksi Gagal</p>
+                <p className="mt-0.5 text-xs text-red-600/80 dark:text-red-400/70">{connectionError}</p>
               </div>
             </div>
           )}
 
           {/* Connection info if connected */}
           {isConnected && odooConfig && (
-            <div className="mx-5 mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
+            <div className="mx-5 mb-4 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 dark:border-emerald-500/20 dark:bg-emerald-500/10">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-semibold text-emerald-400">✓ Terhubung ke Odoo</p>
-                  <p className="mt-0.5 text-xs text-emerald-400/70">
+                  <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">✓ Terhubung ke Odoo</p>
+                  <p className="mt-0.5 text-xs text-emerald-600/80 dark:text-emerald-400/70">
                     {odooConfig.url} · UID: {odooConfig.uid}
                     {lastConnectedAt && (
                       <> · Sejak {lastConnectedAt.toLocaleTimeString('id-ID')}</>
@@ -212,7 +212,7 @@ export default function OdooIntegrationPanel() {
           )}
 
           {/* Action buttons */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-5 py-4 dark:border-white/[0.06]">
             <div className="flex flex-wrap gap-2">
               {!isConnected ? (
                 <button
@@ -244,7 +244,7 @@ export default function OdooIntegrationPanel() {
                   <button
                     id="odoo-disconnect"
                     onClick={disconnect}
-                    className="flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-xs font-medium text-slate-400 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400"
+                    className="flex items-center gap-2 rounded-xl border border-gray-300 px-4 py-2.5 text-xs font-medium text-gray-500 transition hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:border-white/10 dark:text-slate-400 dark:hover:border-red-500/30 dark:hover:bg-red-500/10 dark:hover:text-red-400"
                   >
                     Putuskan
                   </button>
@@ -254,9 +254,9 @@ export default function OdooIntegrationPanel() {
 
             {/* Sync summary */}
             {isConnected && (
-              <div className="flex items-center gap-3 text-xs text-slate-500">
-                <span className="text-emerald-400 font-medium">{syncedCount} synced</span>
-                {failedCount > 0 && <span className="text-red-400 font-medium">{failedCount} failed</span>}
+              <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-slate-500">
+                <span className="text-emerald-600 font-medium dark:text-emerald-400">{syncedCount} synced</span>
+                {failedCount > 0 && <span className="text-red-600 font-medium dark:text-red-400">{failedCount} failed</span>}
                 <span>{activeTasks.length - syncedCount - failedCount} belum</span>
               </div>
             )}
@@ -278,7 +278,7 @@ function OdooIcon() {
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`text-slate-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`text-gray-500 dark:text-slate-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
       <path d="M6 9l6 6 6-6" />
     </svg>
   );

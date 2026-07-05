@@ -103,56 +103,56 @@ function LeadSourcesForm() {
   return (
     <>
     <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-5 py-10 md:px-8">
-      <div className="mb-8 overflow-hidden rounded-[2rem] border border-white/[0.08] bg-slate-950 shadow-2xl shadow-black/40">
+      <div className="mb-8 overflow-hidden rounded-[2rem] border border-gray-200 bg-white shadow-lg dark:border-white/[0.08] dark:bg-slate-950 dark:shadow-2xl dark:shadow-black/40">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-indigo-500/20 blur-3xl" />
-          <div className="absolute bottom-0 left-10 h-32 w-32 rounded-full bg-emerald-500/10 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-indigo-500/10 blur-3xl dark:bg-indigo-500/20" />
+          <div className="absolute bottom-0 left-10 h-32 w-32 rounded-full bg-emerald-500/5 blur-3xl dark:bg-emerald-500/10" />
           <div className="relative flex flex-wrap items-end justify-between gap-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.32em] text-indigo-300">Lead Source Input</p>
-              <h1 className="mt-3 text-2xl font-black tracking-tight text-white md:text-3xl">MBNE & ACE Lead Form</h1>
-              <p className="mt-2 text-sm text-slate-400">Input data sumber leads mingguan dengan total otomatis.</p>
+              <p className="text-xs font-bold uppercase tracking-[0.32em] text-indigo-500 dark:text-indigo-300">Lead Source Input</p>
+              <h1 className="mt-3 text-2xl font-black tracking-tight text-gray-900 md:text-3xl dark:text-white">MBNE & ACE Lead Form</h1>
+              <p className="mt-2 text-sm text-gray-500 dark:text-slate-400">Input data sumber leads mingguan dengan total otomatis.</p>
             </div>
-            <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/10 px-6 py-4 text-right">
-              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Total Leads</p>
-              <p className="mt-1 text-4xl font-black tabular-nums text-white">{totalLeads}</p>
+            <div className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 px-6 py-4 text-right dark:border-emerald-400/20 dark:bg-emerald-400/10">
+              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-300">Total Leads</p>
+              <p className="mt-1 text-4xl font-black tabular-nums text-gray-900 dark:text-white">{totalLeads}</p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
-        <section className="rounded-3xl border border-white/[0.08] bg-slate-900/80 p-5 shadow-2xl shadow-black/30">
-          <h2 className="text-sm font-bold text-slate-100">Periode Report</h2>
+        <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-lg dark:border-white/[0.08] dark:bg-slate-900/80 dark:shadow-2xl dark:shadow-black/30">
+          <h2 className="text-sm font-bold text-gray-900 dark:text-slate-100">Periode Report</h2>
           <div className="mt-5 flex flex-col gap-4">
             <Field label="Judul Data">
-              <input value={title} onChange={(e) => setTitle(e.target.value)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-100 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25" />
+              <input value={title} onChange={(e) => setTitle(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
             </Field>
             <Field label="Bulan">
-              <input value={monthLabel} onChange={(e) => setMonthLabel(e.target.value)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-100 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25" />
+              <input value={monthLabel} onChange={(e) => setMonthLabel(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
             </Field>
             <Field label="Tanggal Periode">
-              <input value={period} onChange={(e) => setPeriod(e.target.value)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-100 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25" />
+              <input value={period} onChange={(e) => setPeriod(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
             </Field>
           </div>
 
-          <div className="mt-6 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Preview Header</p>
-            <p className="mt-3 text-sm font-semibold text-slate-200">{title}</p>
-            <p className="mt-1 text-xs text-slate-400">{monthLabel} | {period}</p>
+          <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/[0.06] dark:bg-white/[0.03]">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500">Preview Header</p>
+            <p className="mt-3 text-sm font-semibold text-gray-800 dark:text-slate-200">{title}</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">{monthLabel} | {period}</p>
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/[0.08] bg-slate-900/70 p-5 shadow-2xl shadow-black/30">
+        <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-lg dark:border-white/[0.08] dark:bg-slate-900/70 dark:shadow-2xl dark:shadow-black/30">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-sm font-bold text-slate-100">Marketing Form</h2>
-              <p className="mt-1 text-xs text-slate-500">Isi angka per sumber leads. Kosong berarti 0.</p>
+              <h2 className="text-sm font-bold text-gray-900 dark:text-slate-100">Marketing Form</h2>
+              <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">Isi angka per sumber leads. Kosong berarti 0.</p>
             </div>
             <button
               type="button"
               onClick={() => setValues(INITIAL_VALUES)}
-              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-400 transition hover:bg-white/10 hover:text-slate-200"
+              className="rounded-xl border border-gray-300 bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-500 transition hover:bg-gray-200 hover:text-gray-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200"
             >
               Reset Sample
             </button>
@@ -161,8 +161,8 @@ function LeadSourcesForm() {
           <div>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {CHANNELS.map((channel) => (
-                <label key={channel.key} className="group rounded-2xl border border-white/[0.07] bg-slate-950/50 p-4 transition hover:border-indigo-400/30 hover:bg-indigo-500/5">
-                  <span className="flex items-center gap-2 text-xs font-semibold text-slate-300">
+                <label key={channel.key} className="group rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-indigo-300 hover:bg-indigo-50 dark:border-white/[0.07] dark:bg-slate-950/50 dark:hover:border-indigo-400/30 dark:hover:bg-indigo-500/5">
+                  <span className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-slate-300">
                     <span>{channel.icon}</span>
                     {channel.label}
                   </span>
@@ -171,7 +171,7 @@ function LeadSourcesForm() {
                     min="0"
                     value={values[channel.key]}
                     onChange={(event) => updateValue(channel.key, event.target.value)}
-                    className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-lg font-bold tabular-nums text-slate-100 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25"
+                    className="mt-3 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-lg font-bold tabular-nums text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
                   />
                 </label>
               ))}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import HeaderUser from './HeaderUser';
 import { useAuthStore } from '../store/authStore';
+import { useTheme } from '@/contexts/ThemeContext';
 import { PageKey, PAGE_ROUTES } from '../types/user';
 
 const FORM_TEAMS = ['Marketing', 'Management', 'Frontend', 'Backend', 'Design', 'QA', 'Product'] as const;
@@ -32,6 +33,7 @@ export default function AppHeader() {
     return items;
   }, [currentUser]);
   const canAccessForm = hasPageAccess(currentUser, 'form');
+  const { theme, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -54,7 +56,7 @@ export default function AppHeader() {
 
   return (
     <>
-      <header className="relative z-30 flex items-center justify-between border-b border-white/[0.06] bg-slate-950/90 px-4 py-3 backdrop-blur-md sm:px-6 md:px-8">
+      <header className="relative z-30 flex items-center justify-between border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur-md sm:px-6 md:px-8 dark:border-white/[0.06] dark:bg-slate-950/90">
         {/* Left: Logo + Desktop Nav */}
         <div className="flex items-center gap-3">
           {/* Logo */}
@@ -67,7 +69,7 @@ export default function AppHeader() {
                 <rect x="9" y="9" width="5" height="5" rx="1" fill="white" fillOpacity="0.9" />
               </svg>
             </div>
-            <span className="hidden text-sm font-bold tracking-tight text-slate-100 sm:block">
+            <span className="hidden text-sm font-bold tracking-tight text-gray-900 sm:block dark:text-slate-100">
               Product dev & Management
             </span>
             <span className="hidden rounded-full bg-indigo-500/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-400 sm:block">
@@ -77,7 +79,7 @@ export default function AppHeader() {
 
           {/* Desktop nav */}
           <div className="ml-1 hidden items-center gap-1 md:flex">
-            <div className="mx-2 h-5 w-px bg-white/[0.08]" />
+            <div className="mx-2 h-5 w-px bg-gray-300 dark:bg-white/[0.08]" />
             {navItems.map(({ href, label, icon: Icon }) => {
               const isActive = pathname === href;
               return (
@@ -87,8 +89,8 @@ export default function AppHeader() {
                   id={`nav-${label.toLowerCase()}`}
                   className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
                     isActive
-                      ? 'bg-white/10 text-slate-100'
-                      : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                      ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-slate-100'
+                      : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-200'
                   }`}
                 >
                   <Icon />
@@ -103,8 +105,8 @@ export default function AppHeader() {
                 href="/lead-sources"
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
                   pathname === '/lead-sources'
-                    ? 'bg-white/10 text-slate-100'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                    ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-slate-100'
+                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-200'
                 }`}
               >
                 <LeadsIcon />
@@ -119,6 +121,15 @@ export default function AppHeader() {
           {/* Notification bell */}
           <NotificationBell />
 
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-300 bg-gray-100 text-gray-600 transition hover:bg-gray-200 hover:text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+          >
+            {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+          </button>
+
           {/* User avatar — always visible */}
           <HeaderUser />
 
@@ -127,7 +138,7 @@ export default function AppHeader() {
             id="mobile-menu-btn"
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Toggle menu"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition md:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-300 bg-gray-100 text-gray-600 transition md:hidden dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
           >
             {menuOpen ? <XIcon /> : <MenuIcon />}
           </button>
@@ -136,13 +147,13 @@ export default function AppHeader() {
 
       {/* Mobile menu overlay */}
       {menuOpen && (
-        <div className="fixed inset-0 z-20 bg-black/50 backdrop-blur-sm md:hidden" />
+        <div className="fixed inset-0 z-20 bg-black/30 backdrop-blur-sm md:hidden dark:bg-black/50" />
       )}
 
       {/* Mobile menu panel */}
       <div
         ref={menuRef}
-        className={`fixed left-0 right-0 top-[57px] z-20 border-b border-white/[0.08] bg-slate-950/98 backdrop-blur-xl transition-all duration-200 md:hidden ${
+        className={`fixed left-0 right-0 top-[57px] z-20 border-b border-gray-200 bg-white/98 backdrop-blur-xl transition-all duration-200 md:hidden dark:border-white/[0.08] dark:bg-slate-950/98 ${
           menuOpen
             ? 'translate-y-0 opacity-100'
             : 'pointer-events-none -translate-y-2 opacity-0'
@@ -158,8 +169,8 @@ export default function AppHeader() {
                 onClick={() => setMenuOpen(false)}
                 className={`flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium transition ${
                   isActive
-                    ? 'bg-indigo-600/20 text-indigo-300'
-                    : 'text-slate-300 hover:bg-white/5'
+                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300'
+                    : 'text-gray-600 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-white/5'
                 }`}
               >
                 <Icon />
@@ -176,8 +187,8 @@ export default function AppHeader() {
               onClick={() => setMenuOpen(false)}
               className={`flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium transition ${
                 pathname === '/lead-sources'
-                  ? 'bg-indigo-600/20 text-indigo-300'
-                  : 'text-slate-300 hover:bg-white/5'
+                  ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300'
+                  : 'text-gray-600 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-white/5'
               }`}
             >
               <LeadsIcon />
@@ -259,7 +270,7 @@ function NotificationBell() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition hover:bg-white/10 hover:text-slate-200"
+        className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-gray-300 bg-gray-100 text-gray-600 transition hover:bg-gray-200 hover:text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-slate-200"
       >
         <BellIcon />
         {unreadCount > 0 && (
@@ -270,32 +281,32 @@ function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-white/[0.1] bg-slate-900 shadow-2xl shadow-black/50">
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
-            <h3 className="text-sm font-bold text-slate-100">Notifications</h3>
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-white/[0.1] dark:bg-slate-900 dark:shadow-black/50">
+          <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-white/[0.06]">
+            <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Notifications</h3>
             {unreadCount > 0 && (
-              <button onClick={markAllAsRead} className="text-xs font-medium text-indigo-400 hover:text-indigo-300">
+              <button onClick={markAllAsRead} className="text-xs font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
                 Mark all read
               </button>
             )}
           </div>
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-slate-500">No notifications</div>
+              <div className="px-4 py-8 text-center text-sm text-gray-400 dark:text-slate-500">No notifications</div>
             ) : (
               notifications.map((n) => (
                 <button
                   key={n.id}
                   onClick={() => { if (!n.isRead) markAsRead(n.id); }}
-                  className={`flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-white/[0.03] ${
+                  className={`flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-gray-50 dark:hover:bg-white/[0.03] ${
                     n.isRead ? 'opacity-60' : ''
                   }`}
                 >
-                  <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${n.isRead ? 'bg-transparent' : 'bg-red-400'}`} />
+                  <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${n.isRead ? 'bg-transparent' : 'bg-red-500 dark:bg-red-400'}`} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-slate-200">{n.title}</p>
-                    <p className="mt-0.5 truncate text-xs text-slate-500">{n.message}</p>
-                    <p className="mt-1 text-[10px] text-slate-600">{new Date(n.createdAt).toLocaleString()}</p>
+                    <p className="text-xs font-semibold text-gray-800 dark:text-slate-200">{n.title}</p>
+                    <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-slate-500">{n.message}</p>
+                    <p className="mt-1 text-[10px] text-gray-400 dark:text-slate-600">{new Date(n.createdAt).toLocaleString()}</p>
                   </div>
                 </button>
               ))
@@ -369,6 +380,28 @@ function UsersIcon() {
       <circle cx="9" cy="7" r="4" />
       <path d="M22 21v-2a4 4 0 00-3-3.87" />
       <path d="M16 3.13a4 4 0 010 7.75" />
+    </svg>
+  );
+}
+function SunIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  );
+}
+function MoonIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
     </svg>
   );
 }

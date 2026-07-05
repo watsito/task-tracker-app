@@ -27,8 +27,8 @@ export default function ReportsPage() {
             </svg>
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-100">Reports</h1>
-            <p className="text-sm text-slate-400">Statistik, export, dan import data task Anda</p>
+            <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-slate-100">Reports</h1>
+            <p className="text-sm text-gray-500 dark:text-slate-400">Statistik, export, dan import data task Anda</p>
           </div>
         </div>
 
@@ -63,8 +63,8 @@ function SectionLabel({ icon, title }: { icon: string; title: string }) {
   return (
     <div className="mb-3 flex items-center gap-2">
       <span>{icon}</span>
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">{title}</h2>
-      <div className="h-px flex-1 bg-white/[0.05]" />
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-500">{title}</h2>
+      <div className="h-px flex-1 bg-gray-200 dark:bg-white/[0.05]" />
     </div>
   );
 }

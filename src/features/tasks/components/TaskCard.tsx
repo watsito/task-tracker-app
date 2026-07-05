@@ -104,7 +104,7 @@ export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
       {...attributes}
       {...listeners}
       id={`task-card-${task.id}`}
-      className={`group relative flex flex-col gap-3 rounded-xl border border-white/[0.07] bg-slate-800/60 p-4 backdrop-blur-sm transition-all duration-200 hover:border-white/[0.14] hover:bg-slate-800/80 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5 ${
+      className={`group relative flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all duration-200 hover:border-gray-300 hover:shadow-md dark:border-white/[0.07] dark:bg-slate-800/60 dark:backdrop-blur-sm dark:hover:border-white/[0.14] dark:hover:bg-slate-800/80 dark:hover:shadow-lg dark:hover:shadow-black/30 dark:hover:-translate-y-0.5 ${
         isDragging ? 'cursor-grabbing border-indigo-500/50' : 'cursor-grab'
       }`}
     >
@@ -118,7 +118,7 @@ export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
             {priority.label}
           </span>
           {task.team && (
-            <span className="inline-flex items-center rounded-full border border-slate-500/30 bg-slate-500/10 px-2 py-0.5 text-[10px] font-medium text-slate-300">
+            <span className="inline-flex items-center rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:border-slate-500/30 dark:bg-slate-500/10 dark:text-slate-300">
               {task.team}
             </span>
           )}
@@ -136,7 +136,7 @@ export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
             <button
               onClick={onEdit}
               title="Edit task"
-              className="flex h-6 w-6 items-center justify-center rounded-md text-slate-500 opacity-0 transition-all duration-150 hover:bg-indigo-500/20 hover:text-indigo-400 group-hover:opacity-100"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-all duration-150 hover:bg-indigo-500/20 hover:text-indigo-500 dark:text-slate-500 dark:hover:text-indigo-400"
             >
               <PencilIcon />
             </button>
@@ -146,7 +146,7 @@ export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
               id={`delete-task-${task.id}`}
               onClick={() => softDeleteTask(task.id)}
               title="Soft delete task"
-              className="flex h-6 w-6 items-center justify-center rounded-md text-slate-600 opacity-0 transition-all duration-150 hover:bg-red-500/20 hover:text-red-400 group-hover:opacity-100"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-all duration-150 hover:bg-red-500/20 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400"
             >
               <TrashIcon />
             </button>
@@ -156,10 +156,10 @@ export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
 
       {/* Title & description */}
       <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-semibold leading-snug text-slate-100">
+        <h3 className="text-sm font-semibold leading-snug text-gray-900 dark:text-slate-100">
           {task.title}
         </h3>
-        <p className="line-clamp-2 text-xs leading-relaxed text-slate-400">
+        <p className="line-clamp-2 text-xs leading-relaxed text-gray-500 dark:text-slate-400">
           {task.description}
         </p>
       </div>
@@ -167,7 +167,7 @@ export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
       {/* Subtasks Progress */}
       {childTasks.length > 0 && (
         <div className="flex flex-col gap-1.5 mt-1">
-          <div className="flex items-center justify-between text-[10px] font-medium text-slate-400">
+          <div className="flex items-center justify-between text-[10px] font-medium text-gray-500 dark:text-slate-400">
             <span className="flex items-center gap-1">
               <CheckSquareIcon />
               Subtasks
@@ -176,7 +176,7 @@ export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
               {completedChildTasks.length}/{childTasks.length} Selesai
             </span>
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-700/50">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700/50">
             <div
               className="h-full rounded-full bg-indigo-500 transition-all duration-300"
               style={{
@@ -197,19 +197,19 @@ export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
                     e.stopPropagation();
                     updateTask(childTask.id, { status: isDone ? 'To Do' : 'Done' });
                   }}
-                  className="flex min-w-0 items-center gap-1.5 rounded-md px-1 py-0.5 text-left text-[11px] transition hover:bg-white/5"
+                  className="flex min-w-0 items-center gap-1.5 rounded-md px-1 py-0.5 text-left text-[11px] transition hover:bg-gray-100 dark:hover:bg-white/5"
                 >
-                  <span className={isDone ? 'text-emerald-400' : 'text-slate-500'}>
+                  <span className={isDone ? 'text-emerald-500 dark:text-emerald-400' : 'text-gray-400 dark:text-slate-500'}>
                     {isDone ? '✓' : '○'}
                   </span>
-                  <span className={`truncate ${isDone ? 'text-slate-500 line-through' : 'text-slate-300'}`}>
+                  <span className={`truncate ${isDone ? 'text-gray-400 line-through dark:text-slate-500' : 'text-gray-700 dark:text-slate-300'}`}>
                     {childTask.title}
                   </span>
                 </button>
               );
             })}
             {remainingChildTasks > 0 && (
-              <p className="pl-4 text-[10px] font-medium text-slate-500">
+              <p className="pl-4 text-[10px] font-medium text-gray-400 dark:text-slate-500">
                 Lihat {remainingChildTasks} lainnya...
               </p>
             )}
@@ -234,7 +234,7 @@ export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
             onClick={() => moveTask(task.id, STATUS_ORDER[currentIndex - 1])}
             disabled={!canMoveBack}
             title={canMoveBack ? `Move to ${STATUS_ORDER[currentIndex - 1]}` : 'Already at first column'}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-slate-500 transition-colors disabled:cursor-not-allowed disabled:opacity-30 hover:enabled:bg-white/10 hover:enabled:text-slate-200"
+            className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors disabled:cursor-not-allowed disabled:opacity-30 hover:enabled:bg-gray-100 hover:enabled:text-gray-700 dark:text-slate-500 dark:hover:enabled:bg-white/10 dark:hover:enabled:text-slate-200"
           >
             <ChevronLeftIcon />
           </button>
@@ -243,7 +243,7 @@ export default function TaskCard({ task, isAdmin, onEdit }: TaskCardProps) {
             onClick={() => moveTask(task.id, STATUS_ORDER[currentIndex + 1])}
             disabled={!canMoveForward}
             title={canMoveForward ? `Move to ${STATUS_ORDER[currentIndex + 1]}` : 'Already at last column'}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-slate-500 transition-colors disabled:cursor-not-allowed disabled:opacity-30 hover:enabled:bg-white/10 hover:enabled:text-slate-200"
+            className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors disabled:cursor-not-allowed disabled:opacity-30 hover:enabled:bg-gray-100 hover:enabled:text-gray-700 dark:text-slate-500 dark:hover:enabled:bg-white/10 dark:hover:enabled:text-slate-200"
           >
             <ChevronRightIcon />
           </button>

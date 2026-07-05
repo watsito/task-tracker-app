@@ -24,10 +24,10 @@ function KpiCard({ label, value, sub, accent }: {
   label: string; value: string | number; sub?: string; accent: string;
 }) {
   return (
-    <div className={`flex flex-col gap-1.5 rounded-2xl border border-white/[0.07] bg-slate-900/80 p-5`}>
+    <div className={`flex flex-col gap-1.5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.07] dark:bg-slate-900/80`}>
       <span className={`text-xs font-semibold uppercase tracking-wider ${accent}`}>{label}</span>
-      <span className="text-3xl font-bold tabular-nums text-slate-100">{value}</span>
-      {sub && <span className="text-xs text-slate-500">{sub}</span>}
+      <span className="text-3xl font-bold tabular-nums text-gray-900 dark:text-slate-100">{value}</span>
+      {sub && <span className="text-xs text-gray-500 dark:text-slate-500">{sub}</span>}
     </div>
   );
 }
@@ -38,15 +38,15 @@ function BarRow({ label, count, total, colorClass }: {
   const pct = total > 0 ? (count / total) * 100 : 0;
   return (
     <div className="flex items-center gap-3">
-      <span className="w-24 shrink-0 text-right text-xs text-slate-400">{label}</span>
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+      <span className="w-24 shrink-0 text-right text-xs text-gray-500 dark:text-slate-400">{label}</span>
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-white/[0.06]">
         <div
           className={`h-full rounded-full transition-all duration-700 ${colorClass}`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="w-8 text-xs font-semibold tabular-nums text-slate-300">{count}</span>
-      <span className="w-9 text-right text-[11px] text-slate-600">{Math.round(pct)}%</span>
+      <span className="w-8 text-xs font-semibold tabular-nums text-gray-700 dark:text-slate-300">{count}</span>
+      <span className="w-9 text-right text-[11px] text-gray-400 dark:text-slate-600">{Math.round(pct)}%</span>
     </div>
   );
 }
@@ -77,8 +77,8 @@ export default function ReportStats() {
       {/* Charts row */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Status distribution */}
-        <div className="rounded-2xl border border-white/[0.07] bg-slate-900/80 p-5">
-          <h3 className="mb-4 text-sm font-semibold text-slate-300">Distribusi Status</h3>
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.07] dark:bg-slate-900/80">
+          <h3 className="mb-4 text-sm font-semibold text-gray-700 dark:text-slate-300">Distribusi Status</h3>
           <div className="flex flex-col gap-3">
             {(Object.entries(s.byStatus) as [TaskStatus, number][]).map(([status, count]) => (
               <BarRow
@@ -93,8 +93,8 @@ export default function ReportStats() {
         </div>
 
         {/* Priority distribution */}
-        <div className="rounded-2xl border border-white/[0.07] bg-slate-900/80 p-5">
-          <h3 className="mb-4 text-sm font-semibold text-slate-300">Distribusi Prioritas</h3>
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.07] dark:bg-slate-900/80">
+          <h3 className="mb-4 text-sm font-semibold text-gray-700 dark:text-slate-300">Distribusi Prioritas</h3>
           <div className="flex flex-col gap-3">
             {(Object.entries(s.byPriority) as [TaskPriority, number][]).map(([priority, count]) => (
               <BarRow
@@ -107,10 +107,11 @@ export default function ReportStats() {
             ))}
           </div>
           {/* Completion ring visual */}
-          <div className="mt-5 flex items-center gap-4 border-t border-white/[0.05] pt-4">
+          <div className="mt-5 flex items-center gap-4 border-t border-gray-200 pt-4 dark:border-white/[0.05]">
             <div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
               <svg className="-rotate-90" width="64" height="64" viewBox="0 0 64 64">
-                <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
+                <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="8" className="dark:hidden" />
+                <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" className="hidden dark:block" />
                 <circle
                   cx="32" cy="32" r="26"
                   fill="none"
@@ -120,11 +121,11 @@ export default function ReportStats() {
                   strokeLinecap="round"
                 />
               </svg>
-              <span className="absolute text-xs font-bold text-slate-200">{s.completionRate}%</span>
+              <span className="absolute text-xs font-bold text-gray-700 dark:text-slate-200">{s.completionRate}%</span>
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-200">Tingkat Penyelesaian</p>
-              <p className="text-xs text-slate-500">{s.byStatus['Done']} task selesai dari {s.active} aktif</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-slate-200">Tingkat Penyelesaian</p>
+              <p className="text-xs text-gray-500 dark:text-slate-500">{s.byStatus['Done']} task selesai dari {s.active} aktif</p>
             </div>
           </div>
         </div>

@@ -189,26 +189,26 @@ function UserManagement() {
     <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-5 py-10 md:px-8">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-indigo-400">Admin Console</p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-100">User Management</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-indigo-500 dark:text-indigo-400">Admin Console</p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-slate-100">User Management</h1>
         </div>
-        <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-slate-300">
+        <div className="rounded-full border border-gray-200 bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
           {users.length} registered user{users.length === 1 ? '' : 's'}
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
-        <section className="rounded-3xl border border-white/[0.08] bg-slate-900/80 p-5 shadow-2xl shadow-black/30">
-          <h2 className="text-sm font-semibold text-slate-100">Create Account</h2>
+        <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-lg dark:border-white/[0.08] dark:bg-slate-900/80 dark:shadow-2xl dark:shadow-black/30">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Create Account</h2>
           <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-3.5">
             <Field label="Nama">
-              <input value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/25" placeholder="Nama user" />
+              <input value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder-slate-600" placeholder="Nama user" />
             </Field>
             <Field label="Email">
-              <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/25" placeholder="user@company.com" />
+              <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder-slate-600" placeholder="user@company.com" />
             </Field>
             <Field label="Password">
-              <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/25" placeholder="Minimal 8 karakter" />
+              <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder-slate-600" placeholder="Minimal 8 karakter" />
             </Field>
             <Field label="Role">
               <div className="grid grid-cols-2 gap-2">
@@ -231,25 +231,25 @@ function UserManagement() {
           </form>
         </section>
 
-        <section className="overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/70 shadow-2xl shadow-black/30">
-          <div className="border-b border-white/[0.06] px-5 py-4">
-            <h2 className="text-sm font-semibold text-slate-100">Registered Accounts</h2>
+        <section className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg dark:border-white/[0.08] dark:bg-slate-900/70 dark:shadow-2xl dark:shadow-black/30">
+          <div className="border-b border-gray-200 px-5 py-4 dark:border-white/[0.06]">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Registered Accounts</h2>
           </div>
 
           {isLoading ? (
             <div className="flex h-52 items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-indigo-500" />
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-indigo-500 dark:border-white/10" />
             </div>
           ) : (
-            <div className="divide-y divide-white/[0.06]">
+            <div className="divide-y divide-gray-200 dark:divide-white/[0.06]">
               {users.map((user) => (
                 <div key={user.id} className="flex flex-wrap items-center gap-4 px-5 py-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-sky-600 text-xs font-bold text-white">
                     {user.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-slate-100">{user.name}</p>
-                    <p className="truncate text-xs text-slate-500">{user.email}</p>
+                    <p className="truncate text-sm font-semibold text-gray-900 dark:text-slate-100">{user.name}</p>
+                    <p className="truncate text-xs text-gray-500 dark:text-slate-500">{user.email}</p>
                   </div>
                   <span className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${user.role === 'admin' ? 'border-indigo-400/30 bg-indigo-500/15 text-indigo-300' : 'border-slate-500/30 bg-slate-500/10 text-slate-400'}`}>
                     {user.role}
