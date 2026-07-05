@@ -144,8 +144,9 @@ export function exportToPdf(tasks: Task[]): void {
   );
 
   // Map tasks for table grouping by parentId
-  const mainTasks = tasks.filter(t => !t.parentId);
+  const mainTasks = tasks.filter(t => !t.parentId).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   const tableData: string[][] = [];
+  const subtaskRows: Set<number> = new Set();
 
   mainTasks.forEach(mainTask => {
     tableData.push([
@@ -153,9 +154,9 @@ export function exportToPdf(tasks: Task[]): void {
       mainTask.status,
       mainTask.priority,
       mainTask.team || '-',
-        mainTask.assigneeId || '-',
-        mainTask.dueDate ? mainTask.dueDate.toLocaleDateString('id-ID') : '-',
-        mainTask.createdAt.toLocaleDateString('id-ID'),
+      mainTask.assigneeId || '-',
+      mainTask.dueDate ? mainTask.dueDate.toLocaleDateString('id-ID') : '-',
+      mainTask.createdAt.toLocaleDateString('id-ID'),
       mainTask.deletedAt ? 'Archived' : 'Active'
     ]);
 
@@ -163,8 +164,9 @@ export function exportToPdf(tasks: Task[]): void {
     childTasks.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
     
     childTasks.forEach(child => {
+      subtaskRows.add(tableData.length);
       tableData.push([
-        `   ↳ [SUB-TASK] ${child.title}`,
+        `    ${child.title}`,
         child.status,
         child.priority,
         child.team || '-',
@@ -184,6 +186,19 @@ export function exportToPdf(tasks: Task[]): void {
     styles: { fontSize: 8, cellPadding: 3 },
     headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [245, 247, 250] },
+    columnStyles: {
+      0: { cellPadding: { left: 6, right: 3, top: 3, bottom: 3 } },
+    },
+    didParseCell: (data) => {
+      if (data.section === 'body' && subtaskRows.has(data.row.index)) {
+        data.cell.styles.fontStyle = 'italic';
+        data.cell.styles.textColor = [100, 100, 100];
+        data.cell.styles.fillColor = [237, 240, 247];
+        if (data.column.index === 0) {
+          data.cell.styles.cellPadding = { left: 14, right: 3, top: 3, bottom: 3 };
+        }
+      }
+    },
     didDrawPage: (data) => {
       // Footer: Page Number
       const pageSize = doc.internal.pageSize;

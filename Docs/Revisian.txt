@@ -1,0 +1,8 @@
+Revisian 1
+
+Noted : 
+1. icon edit task jika di mobile tidak terlihat
+2. buat menu terang atau custom warna biar terlihat terang
+3. Report PDF, hilangkan tulisan (sub-task) pada report. kondisikan report sub-task terlihat di Bawah dan agak menjorok ke dalam.
+
+point 1 & 2 sepertinya karena warna di aplikasinya gelap , mungkin bisa bantu poles untuk warna nya biar iconnya terlihat sih
