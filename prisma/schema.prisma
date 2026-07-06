@@ -38,6 +38,8 @@ model User {
   tasks            Task[]
   notifications    Notification[]
   auditLogs        AuditLog[]
+  createdLeadSources LeadSource[] @relation("LeadSourceCreatedBy")
+  updatedLeadSources LeadSource[] @relation("LeadSourceUpdatedBy")
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -112,11 +114,17 @@ model LeadSource {
   period      String
   channels    Json
   totalLeads  Int
+  createdById String?
+  updatedById String?
+  createdBy   User?    @relation("LeadSourceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy   User?    @relation("LeadSourceUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([team])
   @@index([formType])
+  @@index([createdById])
+  @@index([updatedById])
   @@index([createdAt])
   @@map("lead_sources")
 }
