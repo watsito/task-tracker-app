@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import AuthGuard from '@/features/tasks/components/AuthGuard';
 import AppHeader from '@/features/tasks/components/AppHeader';
 import { useAuthStore } from '@/features/tasks/store/authStore';
@@ -339,18 +339,112 @@ function CloseIcon() {
 
 // ─── Integrations Tab ──────────────────────────────────────────────────────
 
+type OdooConnectionStatus = 'loading' | 'connected' | 'error';
+
+type OdooConnectionResponse = {
+  success: boolean;
+  uid?: number;
+  serverVersion?: string | null;
+  protocolVersion?: number | null;
+  url?: string;
+  database?: string;
+  username?: string;
+  errorMessage?: string;
+};
+
 function IntegrationsTab() {
+  const [status, setStatus] = useState<OdooConnectionStatus>('loading');
+  const [connection, setConnection] = useState<OdooConnectionResponse | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadConnection = async () => {
+      setStatus('loading');
+
+      try {
+        const response = await fetch('/api/integrations/odoo/test');
+        const data = (await response.json()) as OdooConnectionResponse;
+
+        if (!active) return;
+
+        setConnection(data);
+        setStatus(response.ok && data.success ? 'connected' : 'error');
+      } catch {
+        if (!active) return;
+
+        setConnection({
+          success: false,
+          errorMessage: 'Tidak bisa mengecek koneksi Odoo dari browser.',
+        });
+        setStatus('error');
+      }
+    };
+
+    void loadConnection();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const statusStyles: Record<OdooConnectionStatus, string> = {
+    loading: 'bg-amber-400 shadow-amber-400/50 animate-pulse',
+    connected: 'bg-emerald-400 shadow-emerald-400/50',
+    error: 'bg-red-400 shadow-red-400/50',
+  };
+
+  const statusLabel: Record<OdooConnectionStatus, string> = {
+    loading: 'Mengecek koneksi...',
+    connected: 'Terhubung ke Odoo',
+    error: 'Koneksi Odoo gagal',
+  };
+
   return (
     <div className="space-y-8">
-      <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3.5 dark:border-amber-500/20 dark:bg-amber-500/10">
-        <span className="mt-0.5 text-amber-600 dark:text-amber-400">🔗</span>
-        <div>
-          <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Bridge Architecture</p>
-          <p className="mt-0.5 text-xs leading-relaxed text-amber-600/80 dark:text-amber-400/70">
-            Semua komunikasi ke Odoo dikelola oleh <code className="rounded bg-amber-100 px-1 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">odooService.ts</code>.
-          </p>
+      <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-4 dark:border-white/[0.06]">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#714B67] to-[#017E84] shadow-lg shadow-[#714B67]/20">
+              <OdooStatusIcon />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-gray-900 dark:text-slate-100">Odoo 16</h2>
+                <span className={`inline-block h-2 w-2 rounded-full shadow-md ${statusStyles[status]}`} />
+              </div>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-slate-500">Status koneksi Odoo dari konfigurasi `.env` server</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 dark:border-white/[0.08] dark:text-slate-300 dark:hover:bg-white/[0.04]"
+          >
+            Cek Ulang
+          </button>
         </div>
-      </div>
+
+        <div className="space-y-4 px-5 py-5">
+          <div className={`rounded-xl border px-4 py-3 ${status === 'connected' ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-500/20 dark:bg-emerald-500/10' : status === 'error' ? 'border-red-300 bg-red-50 dark:border-red-500/20 dark:bg-red-500/10' : 'border-amber-300 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/10'}`}>
+            <p className={`text-sm font-semibold ${status === 'connected' ? 'text-emerald-700 dark:text-emerald-400' : status === 'error' ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-300'}`}>
+              {statusLabel[status]}
+            </p>
+            <p className={`mt-1 text-xs ${status === 'connected' ? 'text-emerald-600/80 dark:text-emerald-400/70' : status === 'error' ? 'text-red-600/80 dark:text-red-400/70' : 'text-amber-600/80 dark:text-amber-400/70'}`}>
+              {status === 'connected'
+                ? 'Server berhasil melakukan autentikasi XML-RPC ke Odoo.'
+                : connection?.errorMessage ?? 'Sedang memeriksa koneksi ke Odoo.'}
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <InfoCard label="URL Odoo" value={connection?.url ?? '-'} />
+            <InfoCard label="Database" value={connection?.database ?? '-'} />
+            <InfoCard label="UID" value={connection?.uid ? String(connection.uid) : '-'} />
+            <InfoCard label="Versi Server" value={connection?.serverVersion ?? '-'} />
+          </div>
+        </div>
+      </section>
 
       <section>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-500">Segera Hadir</h2>
@@ -368,5 +462,23 @@ function IntegrationsTab() {
         </div>
       </section>
     </div>
+  );
+}
+
+function InfoCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-white/[0.06] dark:bg-white/[0.03]">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-500">{label}</p>
+      <p className="mt-1 break-all text-sm font-semibold text-gray-900 dark:text-slate-100">{value}</p>
+    </div>
+  );
+}
+
+function OdooStatusIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="white" fillOpacity="0.15" />
+      <path d="M8 12a4 4 0 108 0 4 4 0 00-8 0z" fill="white" fillOpacity="0.9" />
+    </svg>
   );
 }

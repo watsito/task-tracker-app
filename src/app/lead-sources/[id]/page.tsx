@@ -194,21 +194,15 @@ function LeadSourceDetailContent() {
           </div>
         ) : (
           <>
-            {paginatedEntries.map((entry) => {
+            {paginatedEntries.map((entry, index) => {
               const channel = CHANNELS.find((item) => item.key === entry.channel);
+              const rowNumber = (effectivePage - 1) * ITEMS_PER_PAGE + index + 1;
               return (
                 <div key={entry.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">{channel?.icon ?? '📌'}</span>
-                        <h2 className="text-base font-bold text-gray-900 dark:text-slate-100">{entry.name}</h2>
-                      </div>
-                      <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">{new Date(entry.createdAt).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                    </div>
-                    <span className="inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
-                      {channel?.label ?? entry.channel}
-                    </span>
+                  <div>
+                    <h2 className="text-base font-bold text-gray-900 dark:text-slate-100">{rowNumber}. {entry.name}</h2>
+                    <p className="mt-1 text-base font-bold text-indigo-600 dark:text-indigo-400">{channel?.label ?? entry.channel}</p>
+                    <p className="mt-1 text-[11px] text-gray-400 dark:text-slate-500">{new Date(entry.createdAt).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
 
                   <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
