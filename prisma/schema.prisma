@@ -26,22 +26,30 @@ enum UserRole {
   MEMBER
 }
 
+enum Department {
+  MARKETING
+  OPERATIONAL
+  MANAGEMENT
+}
+
 model User {
-  id               String    @id @default(cuid())
+  id               String       @id @default(cuid())
   name             String
-  email            String    @unique
+  email            String       @unique
   passwordHash     String?
-  role             UserRole  @default(MEMBER)
-  permissions      Json?     // { frontend: "view", backend: "edit", ... }
-  sessionToken     String?   @unique
+  role             UserRole     @default(MEMBER)
+  departments      Department[]
+  permissions      Json?
+  sessionToken     String?      @unique
   sessionExpiresAt DateTime?
   tasks            Task[]
   notifications    Notification[]
   auditLogs        AuditLog[]
   createdLeadSources LeadSource[] @relation("LeadSourceCreatedBy")
   updatedLeadSources LeadSource[] @relation("LeadSourceUpdatedBy")
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdLeadEntries LeadEntry[]  @relation("LeadEntryCreatedBy")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   @@map("users")
 }
@@ -106,7 +114,7 @@ model Task {
 }
 
 model LeadSource {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   team        String
   formType    String
   title       String
@@ -116,10 +124,11 @@ model LeadSource {
   totalLeads  Int
   createdById String?
   updatedById String?
-  createdBy   User?    @relation("LeadSourceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  updatedBy   User?    @relation("LeadSourceUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdBy   User?       @relation("LeadSourceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy   User?       @relation("LeadSourceUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  entries     LeadEntry[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   @@index([team])
   @@index([formType])
@@ -127,6 +136,30 @@ model LeadSource {
   @@index([updatedById])
   @@index([createdAt])
   @@map("lead_sources")
+}
+
+model LeadEntry {
+  id           String      @id @default(cuid())
+  channel      String
+  name         String
+  phoneNumber  String
+  email        String
+  companyName  String
+  jobTitle     String
+  typeOfNeed   String      @default("")
+  infoSource   String      @default("")
+  leadSourceId String
+  leadSource   LeadSource  @relation(fields: [leadSourceId], references: [id], onDelete: Cascade)
+  createdById  String?
+  createdBy    User?       @relation("LeadEntryCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([channel])
+  @@index([leadSourceId])
+  @@index([createdById])
+  @@index([createdAt])
+  @@map("lead_entries")
 }
 
 model Notification {

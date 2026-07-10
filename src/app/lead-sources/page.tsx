@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AuthGuard from '@/features/tasks/components/AuthGuard';
 import AppHeader from '@/features/tasks/components/AppHeader';
@@ -23,6 +24,19 @@ const CHANNELS = [
 type ChannelKey = (typeof CHANNELS)[number]['key'];
 type LeadFormState = Record<ChannelKey, number>;
 
+interface LeadEntryItem {
+  id: string;
+  channel: string;
+  name: string;
+  phoneNumber: string;
+  email: string;
+  companyName: string;
+  jobTitle: string;
+  typeOfNeed: string;
+  infoSource: string;
+  createdAt: string;
+}
+
 interface LeadSourceEntry {
   id: string;
   team: string;
@@ -35,23 +49,110 @@ interface LeadSourceEntry {
   createdAt: string;
   createdBy?: { id: string; name: string } | null;
   updatedBy?: { id: string; name: string } | null;
+  entries?: LeadEntryItem[];
 }
 
-const INITIAL_VALUES: LeadFormState = {
+interface DirectLeadInput {
+  name: string;
+  phoneNumber: string;
+  email: string;
+  companyName: string;
+  jobTitle: string;
+  typeOfNeed: string;
+  infoSource: string;
+}
+
+function filterLeadEntries(list: LeadSourceEntry[], query: string): LeadSourceEntry[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return list;
+  return list.filter((entry) => {
+    const dateStr = new Date(entry.createdAt).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    const topChannel = Object.entries(entry.channels)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 2)
+      .filter(([, v]) => v > 0)
+      .map(([k]) => CHANNELS.find((c) => c.key === k)?.label ?? k)
+      .join(', ')
+      .toLowerCase();
+    const by = (entry.updatedBy?.name ?? entry.createdBy?.name ?? '').toLowerCase();
+    return (
+      entry.title.toLowerCase().includes(q) ||
+      entry.period.toLowerCase().includes(q) ||
+      entry.monthLabel.toLowerCase().includes(q) ||
+      topChannel.includes(q) ||
+      by.includes(q) ||
+      dateStr.toLowerCase().includes(q)
+    );
+  });
+}
+
+const ALL_ZERO_VALUES: LeadFormState = {
   email: 0,
   googleAds: 0,
   metaAds: 0,
   tender: 0,
   socialMedia: 0,
   linkedin: 0,
-  referral: 1,
-  inboundWa: 1,
+  referral: 0,
+  inboundWa: 0,
   web: 0,
   ka: 0,
-  mes: 1,
-  community: 29,
+  mes: 0,
+  community: 0,
   other: 0,
 };
+
+function createEmptyDirectInput(): DirectLeadInput {
+  return {
+    name: '',
+    phoneNumber: '',
+    email: '',
+    companyName: '',
+    jobTitle: '',
+    typeOfNeed: '',
+    infoSource: '',
+  };
+}
+
+function createEmptyMultipleInputs(): Record<ChannelKey, DirectLeadInput> {
+  return {
+    email: createEmptyDirectInput(),
+    googleAds: createEmptyDirectInput(),
+    metaAds: createEmptyDirectInput(),
+    tender: createEmptyDirectInput(),
+    socialMedia: createEmptyDirectInput(),
+    linkedin: createEmptyDirectInput(),
+    referral: createEmptyDirectInput(),
+    inboundWa: createEmptyDirectInput(),
+    web: createEmptyDirectInput(),
+    ka: createEmptyDirectInput(),
+    mes: createEmptyDirectInput(),
+    community: createEmptyDirectInput(),
+    other: createEmptyDirectInput(),
+  };
+}
+
+function createEmptySavedDrafts(): Record<ChannelKey, DirectLeadInput[]> {
+  return {
+    email: [],
+    googleAds: [],
+    metaAds: [],
+    tender: [],
+    socialMedia: [],
+    linkedin: [],
+    referral: [],
+    inboundWa: [],
+    web: [],
+    ka: [],
+    mes: [],
+    community: [],
+    other: [],
+  };
+}
 
 export default function LeadSourcesPage() {
   return (
@@ -65,17 +166,28 @@ export default function LeadSourcesPage() {
 }
 
 function LeadSourcesForm() {
-  const [title, setTitle] = useState('Data Need MBNE & ACE Proxsis Digital');
-  const [startDate, setStartDate] = useState('2026-06-15');
-  const [endDate, setEndDate] = useState('2026-06-19');
-  const [values, setValues] = useState<LeadFormState>(INITIAL_VALUES);
-  const [saving, setSaving] = useState(false);
+  const [title, setTitle] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [values, setValues] = useState<LeadFormState>({ ...ALL_ZERO_VALUES });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [entries, setEntries] = useState<LeadSourceEntry[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'single' | 'multiple'>('single');
+  const [directInput, setDirectInput] = useState<DirectLeadInput>(createEmptyDirectInput());
+  const [selectedChannel, setSelectedChannel] = useState<ChannelKey | null>(null);
+  const [multipleInputs, setMultipleInputs] = useState<Record<ChannelKey, DirectLeadInput>>(createEmptyMultipleInputs());
+  const [savedDrafts, setSavedDrafts] = useState<Record<ChannelKey, DirectLeadInput[]>>(createEmptySavedDrafts());
+  const [editingDraft, setEditingDraft] = useState<{ channel: ChannelKey; index: number; payload: DirectLeadInput } | null>(null);
+  const [savingChannel, setSavingChannel] = useState<ChannelKey | null>(null);
+  const [savingMultiple, setSavingMultiple] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const ITEMS_PER_PAGE = 25;
 
   const MONTH_NAMES = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -88,7 +200,21 @@ function LeadSourcesForm() {
     return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
   };
 
-  const period = startDate && endDate ? `${formatDateID(startDate)} - ${formatDateID(endDate)}` : '';
+  const formatPeriodRange = (start: string, end: string) => {
+    const startLabel = formatDateID(start);
+    const endLabel = formatDateID(end);
+    return startLabel === endLabel ? startLabel : `${startLabel} - ${endLabel}`;
+  };
+
+  const formatPeriodDisplay = (periodText: string) => {
+    const parts = periodText.split(' - ');
+    if (parts.length === 2 && parts[0].trim() === parts[1].trim()) {
+      return parts[0].trim();
+    }
+    return periodText;
+  };
+
+  const period = startDate && endDate ? formatPeriodRange(startDate, endDate) : '';
 
   const computedMonthLabel = startDate ? (() => {
     const d = new Date(startDate + 'T00:00:00');
@@ -100,24 +226,27 @@ function LeadSourcesForm() {
     [values]
   );
 
+  const filteredEntries = useMemo(
+    () => filterLeadEntries(entries, searchQuery),
+    [entries, searchQuery]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / ITEMS_PER_PAGE));
+  const effectivePage = Math.max(1, Math.min(currentPage, totalPages));
+
+  const paginatedEntries = useMemo(() => {
+    const start = (effectivePage - 1) * ITEMS_PER_PAGE;
+    return filteredEntries.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredEntries, effectivePage]);
+
+  const pageStart = filteredEntries.length === 0 ? 0 : (effectivePage - 1) * ITEMS_PER_PAGE + 1;
+  const pageEnd = Math.min(effectivePage * ITEMS_PER_PAGE, filteredEntries.length);
+  const activeLeadSource = entries.find((entry) => entry.id === editingId) ?? null;
+
   const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast({ message, type });
     toastTimer.current = setTimeout(() => setToast(null), 3500);
-  }, []);
-
-  const fetchEntries = useCallback(async () => {
-    setLoadingEntries(true);
-    try {
-      const res = await fetch('/api/lead-sources');
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data)) setEntries(data);
-      }
-    } catch {} 
-    finally {
-      setLoadingEntries(false);
-    }
   }, []);
 
   useEffect(() => {
@@ -130,73 +259,231 @@ function LeadSourcesForm() {
     return () => controller.abort();
   }, []);
 
-  const updateValue = (key: ChannelKey, value: string) => {
-    setValues((current) => ({
+  const updateDirectInput = (field: keyof DirectLeadInput, value: string) => {
+    setDirectInput((current) => ({
       ...current,
-      [key]: Math.max(0, Number(value) || 0),
+      [field]: value,
     }));
   };
 
-  const resetForm = () => {
-    setValues(INITIAL_VALUES);
-    setTitle('Data Need MBNE & ACE Proxsis Digital');
-    setStartDate('2026-06-15');
-    setEndDate('2026-06-19');
-    setEditingId(null);
+  const updateMultipleInput = (channel: ChannelKey, field: keyof DirectLeadInput, value: string) => {
+    setMultipleInputs((current) => ({
+      ...current,
+      [channel]: {
+        ...current[channel],
+        [field]: value,
+      },
+    }));
   };
 
-  const handleSave = async () => {
-    setSaving(true);
+  const resetDirectInput = () => {
+    setDirectInput(createEmptyDirectInput());
+    setSelectedChannel(null);
+  };
+
+  const resetMultipleInput = (channel: ChannelKey) => {
+    if (editingDraft && editingDraft.channel === channel) {
+      setSavedDrafts((current) => ({
+        ...current,
+        [channel]: [
+          ...current[channel].slice(0, editingDraft.index),
+          editingDraft.payload,
+          ...current[channel].slice(editingDraft.index),
+        ],
+      }));
+      setEditingDraft(null);
+    }
+
+    setMultipleInputs((current) => ({
+      ...current,
+      [channel]: createEmptyDirectInput(),
+    }));
+  };
+
+  const handleEditDraft = (channel: ChannelKey, index: number) => {
+    const payload = savedDrafts[channel][index];
+    if (!payload) return;
+
+    setMultipleInputs((current) => ({
+      ...current,
+      [channel]: payload,
+    }));
+    setSavedDrafts((current) => ({
+      ...current,
+      [channel]: current[channel].filter((_, itemIndex) => itemIndex !== index),
+    }));
+    setEditingDraft({ channel, index, payload });
+  };
+
+  const removeSavedDraft = (channel: ChannelKey, index: number) => {
+    setSavedDrafts((current) => ({
+      ...current,
+      [channel]: current[channel].filter((_, itemIndex) => itemIndex !== index),
+    }));
+    if (editingDraft && editingDraft.channel === channel && editingDraft.index === index) {
+      setEditingDraft(null);
+    }
+  };
+
+  const resetForm = () => {
+    setValues({ ...ALL_ZERO_VALUES });
+    setTitle('');
+    setStartDate('');
+    setEndDate('');
+    setEditingId(null);
+    setDirectInput(createEmptyDirectInput());
+    setSelectedChannel(null);
+    setMultipleInputs(createEmptyMultipleInputs());
+    setSavedDrafts(createEmptySavedDrafts());
+    setEditingDraft(null);
+    setViewMode('single');
+  };
+
+  const handleDirectSave = async () => {
+    if (!selectedChannel) {
+      showToast('Pilih marketing channel terlebih dahulu.', 'error');
+      return;
+    }
+
+    if (!title.trim() || !startDate || !endDate || !computedMonthLabel || !period) {
+      showToast('Lengkapi dulu judul dan periode report sebelum simpan direct lead.', 'error');
+      return;
+    }
+
+    if (!directInput.name || !directInput.phoneNumber || !directInput.email || !directInput.companyName || !directInput.jobTitle || !directInput.typeOfNeed) {
+      showToast('Semua field direct lead wajib diisi.', 'error');
+      return;
+    }
+
+    setSavingChannel(selectedChannel);
     try {
-      const url = editingId ? `/api/lead-sources/${editingId}` : '/api/lead-sources';
-      const method = editingId ? 'PATCH' : 'POST';
-      const response = await fetch(url, {
-        method,
+      const response = await fetch('/api/lead-entries', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          team: 'Marketing',
-          formType: 'MBNE & ACE Lead Form',
+          leadSourceId: editingId,
           title,
           monthLabel: computedMonthLabel,
           period,
-          channels: values,
-          totalLeads,
+          channel: selectedChannel,
+          ...directInput,
         }),
       });
+
       if (!response.ok) {
         const data = await response.json().catch(() => null) as { error?: string } | null;
-        throw new Error(data?.error ?? 'Gagal menyimpan data');
+        throw new Error(data?.error ?? 'Gagal menyimpan direct lead');
       }
-      showToast(editingId ? 'Data berhasil diupdate!' : 'Data berhasil disimpan!');
-      resetForm();
-      fetchEntries();
+
+      const data = await response.json() as { leadSource: LeadSourceEntry };
+      setEditingId(data.leadSource.id);
+      setValues({ ...ALL_ZERO_VALUES, ...data.leadSource.channels });
+      resetDirectInput();
+      setEntries((prev) => {
+        const filtered = prev.filter((entry) => entry.id !== data.leadSource.id);
+        return [data.leadSource, ...filtered];
+      });
+      showToast(`Lead ${CHANNELS.find((item) => item.key === selectedChannel)?.label ?? selectedChannel} berhasil disimpan.`);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Gagal menyimpan data.', 'error');
+      showToast(err instanceof Error ? err.message : 'Gagal menyimpan direct lead.', 'error');
     } finally {
-      setSaving(false);
+      setSavingChannel(null);
     }
   };
 
-  const handleEdit = (entry: LeadSourceEntry) => {
-    setTitle(entry.title);
-    const parts = entry.period.split(' - ');
-    if (parts.length === 2) {
-      const parseDate = (s: string) => {
-        const segments = s.trim().split(' ');
-        const day = parseInt(segments[0]);
-        const monthIdx = MONTH_NAMES.indexOf(segments[1]);
-        const year = parseInt(segments[2]);
-        if (monthIdx >= 0 && !isNaN(day) && !isNaN(year)) {
-          return `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        }
-        return '';
-      };
-      setStartDate(parseDate(parts[0]));
-      setEndDate(parseDate(parts[1]));
+  const handleMultipleSave = (channel: ChannelKey) => {
+    const payload = multipleInputs[channel];
+    if (!payload.name || !payload.phoneNumber || !payload.email || !payload.companyName || !payload.jobTitle || !payload.typeOfNeed) {
+      showToast('Field Name, Phone, Email, Company, Job Title, dan Type of Need wajib diisi sebelum save.', 'error');
+      return;
     }
-    setValues({ ...INITIAL_VALUES, ...entry.channels });
-    setEditingId(entry.id);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    setSavedDrafts((current) => {
+      if (editingDraft && editingDraft.channel === channel) {
+        return {
+          ...current,
+          [channel]: [
+            ...current[channel].slice(0, editingDraft.index),
+            payload,
+            ...current[channel].slice(editingDraft.index),
+          ],
+        };
+      }
+
+      return {
+        ...current,
+        [channel]: [...current[channel], payload],
+      };
+    });
+
+    setMultipleInputs((current) => ({
+      ...current,
+      [channel]: createEmptyDirectInput(),
+    }));
+    setEditingDraft((current) => (current?.channel === channel ? null : current));
+    showToast(`${CHANNELS.find((item) => item.key === channel)?.label ?? channel} berhasil disimpan ke draft.`);
+  };
+
+  const handleMultipleSubmit = async () => {
+    const channelsToSubmit = CHANNELS.filter((channel) => savedDrafts[channel.key].length > 0);
+    if (channelsToSubmit.length === 0) {
+      showToast('Belum ada channel yang disimpan ke draft.', 'error');
+      return;
+    }
+
+    if (!title.trim() || !startDate || !endDate || !computedMonthLabel || !period) {
+      showToast('Lengkapi dulu judul dan periode report sebelum simpan data.', 'error');
+      return;
+    }
+
+    setSavingMultiple(true);
+    try {
+      let activeId = editingId;
+      let latestLeadSource: LeadSourceEntry | null = null;
+
+      for (const channel of channelsToSubmit) {
+        for (const payload of savedDrafts[channel.key]) {
+          const response = await fetch('/api/lead-entries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              leadSourceId: activeId,
+              title,
+              monthLabel: computedMonthLabel,
+              period,
+              channel: channel.key,
+              ...payload,
+            }),
+          });
+
+          if (!response.ok) {
+            const data = await response.json().catch(() => null) as { error?: string } | null;
+            throw new Error(data?.error ?? `Gagal menyimpan ${channel.label}`);
+          }
+
+          const data = await response.json() as { leadSource: LeadSourceEntry };
+          activeId = data.leadSource.id;
+          latestLeadSource = data.leadSource;
+        }
+      }
+
+      if (latestLeadSource) {
+        setEditingId(latestLeadSource.id);
+        setValues({ ...ALL_ZERO_VALUES, ...latestLeadSource.channels });
+        setEntries((prev) => {
+          const filtered = prev.filter((entry) => entry.id !== latestLeadSource?.id);
+          return [latestLeadSource, ...filtered];
+        });
+      }
+
+      setMultipleInputs(createEmptyMultipleInputs());
+      setSavedDrafts(createEmptySavedDrafts());
+      showToast('Semua draft multiple input berhasil disimpan.');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Gagal menyimpan multiple input.', 'error');
+    } finally {
+      setSavingMultiple(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -207,7 +494,12 @@ function LeadSourcesForm() {
         const data = await response.json().catch(() => null) as { error?: string } | null;
         throw new Error(data?.error ?? 'Gagal menghapus data');
       }
-      setEntries((prev) => prev.filter((e) => e.id !== id));
+      setEntries((prev) => {
+        const next = prev.filter((e) => e.id !== id);
+        const newTotalPages = Math.max(1, Math.ceil(filterLeadEntries(next, searchQuery).length / ITEMS_PER_PAGE));
+        if (currentPage > newTotalPages) setCurrentPage(newTotalPages);
+        return next;
+      });
       if (editingId === id) resetForm();
       showToast('Data berhasil dihapus.');
     } catch (err) {
@@ -280,76 +572,253 @@ function LeadSourcesForm() {
         </section>
 
         <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-lg dark:border-white/[0.08] dark:bg-slate-900/70 dark:shadow-2xl dark:shadow-black/30">
-          <div className="mb-5 flex items-center justify-between gap-4">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-sm font-bold text-gray-900 dark:text-slate-100">Marketing Form</h2>
-              <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">Isi angka per sumber leads. Kosong berarti 0.</p>
+              <h2 className="text-sm font-bold text-gray-900 dark:text-slate-100">{viewMode === 'single' ? 'Single Input View' : 'Multiple Input View'}</h2>
+              <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">
+                {viewMode === 'single'
+                  ? 'Input satu lead lalu pilih satu marketing channel.'
+                  : 'Isi beberapa channel sekaligus, save ke draft per channel, lalu simpan semuanya sekali.'}
+              </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setValues(INITIAL_VALUES)}
-              className="rounded-xl border border-gray-300 bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-500 transition hover:bg-gray-200 hover:text-gray-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200"
-            >
-              Reset Sample
-            </button>
-          </div>
-
-          <div>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {CHANNELS.map((channel) => (
-                <label key={channel.key} className="group rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-indigo-300 hover:bg-indigo-50 dark:border-white/[0.07] dark:bg-slate-950/50 dark:hover:border-indigo-400/30 dark:hover:bg-indigo-500/5">
-                  <span className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-slate-300">
-                    <span>{channel.icon}</span>
-                    {channel.label}
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={values[channel.key]}
-                    onChange={(event) => updateValue(channel.key, event.target.value)}
-                    className="mt-3 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-lg font-bold tabular-nums text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
-                  />
-                </label>
-              ))}
-            </div>
-            {editingId ? (
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="mt-5 flex-1 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {saving ? 'Mengupdate...' : 'Update Data'}
-                </button>
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="mt-5 rounded-xl border border-gray-300 bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
-                >
-                  Batal
-                </button>
-              </div>
-            ) : (
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className="mt-5 w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => setViewMode('single')}
+                className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                  viewMode === 'single'
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                    : 'border border-gray-300 bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200'
+                }`}
               >
-                {saving ? 'Menyimpan...' : 'Simpan Data'}
+                Single Input
               </button>
-            )}
+              <button
+                type="button"
+                onClick={() => setViewMode('multiple')}
+                className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                  viewMode === 'multiple'
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                    : 'border border-gray-300 bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200'
+                }`}
+              >
+                Multiple Input
+              </button>
+              <button
+                type="button"
+                onClick={() => { setValues({ ...ALL_ZERO_VALUES }); resetDirectInput(); setMultipleInputs(createEmptyMultipleInputs()); setSavedDrafts(createEmptySavedDrafts()); }}
+                className="rounded-xl border border-gray-300 bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-500 transition hover:bg-gray-200 hover:text-gray-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200"
+              >
+                Reset Form
+              </button>
+            </div>
           </div>
+
+          {viewMode === 'single' ? (
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/[0.07] dark:bg-slate-950/50">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Name">
+                  <input value={directInput.name} onChange={(e) => updateDirectInput('name', e.target.value)} className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
+                </Field>
+                <Field label="Phone Number">
+                  <input value={directInput.phoneNumber} onChange={(e) => updateDirectInput('phoneNumber', e.target.value)} className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
+                </Field>
+                <Field label="Email">
+                  <input value={directInput.email} onChange={(e) => updateDirectInput('email', e.target.value)} className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
+                </Field>
+                <Field label="Company Name">
+                  <input value={directInput.companyName} onChange={(e) => updateDirectInput('companyName', e.target.value)} className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
+                </Field>
+                <Field label="Job Title/Position">
+                  <input value={directInput.jobTitle} onChange={(e) => updateDirectInput('jobTitle', e.target.value)} className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
+                </Field>
+                <Field label="Type of Need">
+                  <input value={directInput.typeOfNeed} onChange={(e) => updateDirectInput('typeOfNeed', e.target.value)} className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
+                </Field>
+              </div>
+
+              <div className="mt-5">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">Select Marketing Channel</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {CHANNELS.map((channel) => {
+                    const savedEntries = activeLeadSource?.entries?.filter((entry) => entry.channel === channel.key).length ?? 0;
+                    const isSelected = selectedChannel === channel.key;
+                    const visualLabel = channel.key === 'inboundWa' ? 'WhatsApp' : channel.label;
+                    return (
+                      <button
+                        key={channel.key}
+                        type="button"
+                        onClick={() => setSelectedChannel(channel.key)}
+                        className={`rounded-2xl border p-4 text-left transition ${
+                          isSelected
+                            ? 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-500/20 dark:border-indigo-400/40 dark:bg-indigo-500/10'
+                            : 'border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50 dark:border-white/[0.07] dark:bg-slate-950/70 dark:hover:border-indigo-400/30 dark:hover:bg-indigo-500/5'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className={`flex items-center gap-2 text-sm font-bold ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-900 dark:text-slate-100'}`}>
+                              <span>{channel.icon}</span>
+                              {visualLabel}
+                            </p>
+                            <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-500">Saved leads: {savedEntries}</p>
+                          </div>
+                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${isSelected ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-slate-400'}`}>
+                            {values[channel.key]} total
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="mt-5 flex gap-2">
+                <button type="button" onClick={handleDirectSave} disabled={savingChannel !== null} className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60">
+                  {savingChannel ? 'Submitting...' : 'Submit Data'}
+                </button>
+                <button type="button" onClick={resetDirectInput} className="rounded-xl border border-gray-300 bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10">
+                  Reset Form
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {CHANNELS.map((channel) => {
+                  const input = multipleInputs[channel.key];
+                  const drafts = savedDrafts[channel.key];
+                  return (
+                    <div key={channel.key} className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/[0.07] dark:bg-slate-950/50">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="flex items-center gap-2 text-sm font-bold text-gray-900 dark:text-slate-100">
+                            <span>{channel.icon}</span>
+                            {channel.key === 'inboundWa' ? 'WhatsApp' : channel.label}
+                          </p>
+                          <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-500">{drafts.length > 0 ? `${drafts.length} draft tersimpan` : 'Belum ada draft'}</p>
+                        </div>
+                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${drafts.length > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300' : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-slate-400'}`}>
+                          {drafts.length > 0 ? `${drafts.length} Saved` : 'Draft'}
+                        </span>
+                      </div>
+
+                      {drafts.length > 0 && (
+                        <div className="mb-4 space-y-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+                          {drafts.map((draft, index) => (
+                            <div key={`${channel.key}-${index}`} className="flex items-start justify-between gap-3 rounded-lg bg-white/80 px-3 py-2 text-xs dark:bg-slate-950/50">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-semibold text-gray-800 dark:text-slate-200">{draft.name} • {draft.companyName}</p>
+                                <p className="mt-0.5 text-gray-500 dark:text-slate-400">{draft.phoneNumber} • {draft.email}</p>
+                                <p className="mt-0.5 text-gray-400 dark:text-slate-500">{draft.jobTitle}</p>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <button type="button" onClick={() => handleEditDraft(channel.key, index)} className="rounded-md px-2 py-1 text-[10px] font-semibold text-indigo-600 transition hover:bg-indigo-50 dark:hover:bg-indigo-500/10 dark:text-indigo-300">
+                                  Edit
+                                </button>
+                                <button type="button" onClick={() => removeSavedDraft(channel.key, index)} className="rounded-md px-2 py-1 text-[10px] font-semibold text-red-500 transition hover:bg-red-50 dark:hover:bg-red-500/10">
+                                  Hapus
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <Field label="Name">
+                          <input value={input.name} onChange={(e) => updateMultipleInput(channel.key, 'name', e.target.value)} className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
+                        </Field>
+                        <Field label="Phone Number">
+                          <input value={input.phoneNumber} onChange={(e) => updateMultipleInput(channel.key, 'phoneNumber', e.target.value)} className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
+                        </Field>
+                        <Field label="Email">
+                          <input value={input.email} onChange={(e) => updateMultipleInput(channel.key, 'email', e.target.value)} className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
+                        </Field>
+                        <Field label="Company Name">
+                          <input value={input.companyName} onChange={(e) => updateMultipleInput(channel.key, 'companyName', e.target.value)} className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
+                        </Field>
+                        <Field label="Job Title/Position">
+                          <input value={input.jobTitle} onChange={(e) => updateMultipleInput(channel.key, 'jobTitle', e.target.value)} className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
+                        </Field>
+                        <Field label="Type of Need">
+                          <input value={input.typeOfNeed} onChange={(e) => updateMultipleInput(channel.key, 'typeOfNeed', e.target.value)} className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
+                        </Field>
+                        {channel.key === 'other' && (
+                          <Field label="Information Source">
+                            <input value={input.infoSource} onChange={(e) => updateMultipleInput(channel.key, 'infoSource', e.target.value)} className="rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
+                          </Field>
+                        )}
+                      </div>
+
+                      <div className="mt-4 flex gap-2">
+                        <button type="button" onClick={() => handleMultipleSave(channel.key)} className="flex-1 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-500">
+                          {editingDraft?.channel === channel.key ? 'Update' : 'Save'}
+                        </button>
+                        <button type="button" onClick={() => resetMultipleInput(channel.key)} className="rounded-xl border border-gray-300 bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10">
+                          {editingDraft?.channel === channel.key ? 'Batal' : 'Cancel'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-5 flex gap-2">
+                <button type="button" onClick={handleMultipleSubmit} disabled={savingMultiple} className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60">
+                  {savingMultiple ? 'Menyimpan...' : 'Simpan Data'}
+                </button>
+                <button type="button" onClick={() => { setMultipleInputs(createEmptyMultipleInputs()); setSavedDrafts(createEmptySavedDrafts()); }} className="rounded-xl border border-gray-300 bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10">
+                  Reset Draft
+                </button>
+              </div>
+            </div>
+          )}
         </section>
       </div>
 
       <section className="mt-10">
-        <div className="mb-4 flex items-center gap-2">
-          <span>📋</span>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-500">Riwayat Data Tersimpan</h2>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span>📋</span>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-500">Riwayat Data Tersimpan</h2>
+          </div>
           <div className="h-px flex-1 bg-gray-200 dark:bg-white/[0.05]" />
-          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-500 dark:bg-white/5 dark:text-slate-400">{entries.length} entri</span>
+          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-500 dark:bg-white/5 dark:text-slate-400">{filteredEntries.length} entri</span>
+        </div>
+
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </span>
+            <input
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+              placeholder="Cari judul, periode, channel, atau nama user..."
+              className="w-full rounded-xl border border-gray-300 bg-white py-2.5 pl-9 pr-9 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-400/25 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder-slate-600"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => { setSearchQuery(''); setCurrentPage(1); }}
+                aria-label="Hapus pencarian"
+                className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-slate-200"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                  <path d="M18 6L6 18" /><path d="M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          {filteredEntries.length > ITEMS_PER_PAGE && (
+            <p className="text-xs text-gray-400 dark:text-slate-500">
+              Halaman {currentPage} / {totalPages}
+            </p>
+          )}
         </div>
 
         {loadingEntries ? (
@@ -359,6 +828,10 @@ function LeadSourcesForm() {
         ) : entries.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 py-12 text-center dark:border-white/10 dark:bg-white/[0.02]">
             <p className="text-sm text-gray-400 dark:text-slate-500">Belum ada data tersimpan</p>
+          </div>
+        ) : filteredEntries.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 py-12 text-center dark:border-white/10 dark:bg-white/[0.02]">
+            <p className="text-sm text-gray-400 dark:text-slate-500">Tidak ada data yang cocok dengan pencarian <span className="font-semibold">{searchQuery}</span></p>
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
@@ -376,7 +849,7 @@ function LeadSourcesForm() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-white/[0.06]">
-                  {entries.map((entry) => {
+                  {paginatedEntries.map((entry) => {
                     const date = new Date(entry.createdAt);
                     const dateStr = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
                     const timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
@@ -388,7 +861,7 @@ function LeadSourcesForm() {
                       .join(', ');
 
                     return (
-                      <tr key={entry.id} className={`transition ${editingId === entry.id ? 'bg-indigo-50/50 dark:bg-indigo-500/10' : 'hover:bg-gray-50 dark:hover:bg-white/[0.02]'}`}>
+                      <tr key={entry.id} className="transition hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                         <td className="px-4 py-3">
                           <p className="text-xs font-medium text-gray-800 dark:text-slate-200">{dateStr}</p>
                           <p className="text-[11px] text-gray-400 dark:text-slate-500">{timeStr}</p>
@@ -397,7 +870,7 @@ function LeadSourcesForm() {
                           <p className="text-xs font-semibold text-gray-800 dark:text-slate-200">{entry.title}</p>
                           <p className="text-[11px] text-gray-400 dark:text-slate-500">{entry.monthLabel}</p>
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-slate-400">{entry.period}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-slate-400">{formatPeriodDisplay(entry.period)}</td>
                         <td className="px-4 py-3 text-center">
                           <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold tabular-nums text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">{entry.totalLeads}</span>
                         </td>
@@ -412,13 +885,12 @@ function LeadSourcesForm() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleEdit(entry)}
+                            <Link
+                              href={`/lead-sources/${entry.id}`}
                               className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-500/10"
                             >
-                              Edit
-                            </button>
+                              Details
+                            </Link>
                             <button
                               type="button"
                               onClick={() => handleDelete(entry.id)}
@@ -435,6 +907,41 @@ function LeadSourcesForm() {
                 </tbody>
               </table>
             </div>
+
+            {totalPages > 1 && (
+              <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-100 bg-gray-50 px-4 py-3 dark:border-white/[0.06] dark:bg-white/[0.02] sm:flex-row">
+                <p className="text-xs text-gray-500 dark:text-slate-400">
+                  Menampilkan <span className="font-semibold text-gray-700 dark:text-slate-200">{pageStart}</span>–<span className="font-semibold text-gray-700 dark:text-slate-200">{pageEnd}</span> dari <span className="font-semibold text-gray-700 dark:text-slate-200">{filteredEntries.length}</span> data
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={effectivePage === 1}
+                    className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                    Sebelumnya
+                  </button>
+                  <span className="px-1 text-xs font-semibold text-gray-600 dark:text-slate-400">
+                    {effectivePage} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={effectivePage === totalPages}
+                    className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+                  >
+                    Berikutnya
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>

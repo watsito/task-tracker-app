@@ -1,0 +1,2 @@
+ALTER TABLE "lead_entries"
+ADD COLUMN IF NOT EXISTS "typeOfNeed" TEXT NOT NULL DEFAULT '';

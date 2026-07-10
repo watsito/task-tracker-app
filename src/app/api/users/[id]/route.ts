@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Prisma, UserRole } from '@/generated/prisma/client';
+import { Prisma, UserRole, Department } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin, toAppUser } from '@/lib/auth';
 
@@ -13,11 +13,13 @@ export async function PATCH(request: Request, context: RouteContext) {
     const { id } = await context.params;
     const body = await request.json() as {
       role?: string;
+      departments?: string[];
       permissions?: Record<string, unknown>;
     };
 
     const data: Prisma.UserUpdateInput = {};
     if (body.role) data.role = body.role.toUpperCase() as UserRole;
+    if (body.departments) data.departments = body.departments.map((d) => d.toUpperCase()) as Department[];
     if (body.permissions !== undefined) data.permissions = body.permissions as Prisma.InputJsonValue;
 
     const user = await prisma.user.update({

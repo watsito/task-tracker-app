@@ -1,5 +1,13 @@
 export type UserRole = 'admin' | 'member';
 
+export type Department = 'MARKETING' | 'OPERATIONAL' | 'MANAGEMENT';
+
+export const DEPARTMENTS: { value: Department; label: string; icon: string; desc: string }[] = [
+  { value: 'OPERATIONAL', label: 'Operational', icon: '📋', desc: 'Task board & project management' },
+  { value: 'MARKETING', label: 'Marketing', icon: '📣', desc: 'Lead sources & marketing dashboard' },
+  { value: 'MANAGEMENT', label: 'Management', icon: '📊', desc: 'Switch between task board and marketing dashboard' },
+];
+
 // ─── Team Permissions ───────────────────────────────────────
 
 /** Permission level for a specific team */
@@ -58,6 +66,8 @@ export const PAGES = [
   'integrations',
   'form',
   'users',
+  'settings',
+  'operationalDashboard',
 ] as const;
 
 export type PageKey = (typeof PAGES)[number];
@@ -69,6 +79,8 @@ export const PAGE_LABELS: Record<PageKey, string> = {
   integrations: 'Integrations',
   form: 'Form (Lead Sources)',
   users: 'Users (Admin)',
+  settings: 'Pengaturan',
+  operationalDashboard: 'Operational Dashboard',
 };
 
 /** Page route map */
@@ -78,6 +90,8 @@ export const PAGE_ROUTES: Record<PageKey, string> = {
   integrations: '/integrations',
   form: '/lead-sources',
   users: '/users',
+  settings: '/settings',
+  operationalDashboard: '/dashboard/operational',
 };
 
 export interface PageAccess {
@@ -96,6 +110,7 @@ export interface AppUser {
   name: string;
   email: string;
   role: UserRole;
+  departments: Department[];
   permissions?: UserPermissions;
   avatarUrl?: string;
 }

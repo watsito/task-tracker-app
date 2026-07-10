@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import type { User } from '@/generated/prisma/client';
-import type { AppUser, UserPermissions } from '@/features/tasks/types/user';
+import type { AppUser, Department, UserPermissions } from '@/features/tasks/types/user';
 import { prisma } from './prisma';
 
 export const SESSION_COOKIE_NAME = 'task_tracker_session';
@@ -11,6 +11,7 @@ export function toAppUser(user: User): AppUser {
     name: user.name,
     email: user.email,
     role: user.role === 'ADMIN' ? 'admin' : 'member',
+    departments: (user.departments as Department[]) ?? [],
     permissions: (user.permissions as UserPermissions | null) ?? undefined,
   };
 }

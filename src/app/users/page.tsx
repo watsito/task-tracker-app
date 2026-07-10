@@ -6,6 +6,8 @@ import AppHeader from '@/features/tasks/components/AppHeader';
 import {
   AppUser,
   UserRole,
+  Department,
+  DEPARTMENTS,
   TeamName,
   TeamPermission,
   PageKey,
@@ -27,13 +29,14 @@ export default function UsersPage() {
   );
 }
 
-function UserManagement() {
+export function UserManagement() {
   const currentUser = useAuthStore((s) => s.currentUser);
   const [users, setUsers] = useState<AppUser[]>([]);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('member');
+  const [departments, setDepartments] = useState<Department[]>(['OPERATIONAL']);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
@@ -74,7 +77,7 @@ function UserManagement() {
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({ name, email, password, role, departments }),
       });
 
       if (!response.ok) {
@@ -88,6 +91,7 @@ function UserManagement() {
       setEmail('');
       setPassword('');
       setRole('member');
+      setDepartments(['OPERATIONAL']);
       showToast(`Akun ${createdUser.email} berhasil dibuat.`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Gagal membuat user.', 'error');
@@ -224,6 +228,42 @@ function UserManagement() {
                 ))}
               </div>
             </Field>
+            <Field label="Department">
+              <div className="flex flex-col gap-2">
+                {DEPARTMENTS.map((dept) => {
+                  const isSelected = departments.includes(dept.value);
+                  return (
+                    <button
+                      key={dept.value}
+                      type="button"
+                      onClick={() => {
+                        setDepartments((prev) =>
+                          isSelected
+                            ? prev.filter((d) => d !== dept.value)
+                            : [...prev, dept.value]
+                        );
+                      }}
+                      className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
+                        isSelected
+                          ? 'border-indigo-400 bg-indigo-500/15 text-indigo-200'
+                          : 'border-white/10 bg-white/5 text-slate-400 hover:bg-white/10'
+                      }`}
+                    >
+                      <span className="text-lg">{dept.icon}</span>
+                      <div>
+                        <p className="text-xs font-semibold">{dept.label}</p>
+                        <p className="text-[10px] opacity-60">{dept.desc}</p>
+                      </div>
+                      {isSelected && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-auto shrink-0 text-indigo-400">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
 
             <button disabled={isSubmitting} className="mt-1 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60">
               {isSubmitting ? 'Membuat akun...' : 'Buat Akun'}
@@ -254,14 +294,16 @@ function UserManagement() {
                   <span className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${user.role === 'admin' ? 'border-indigo-400/30 bg-indigo-500/15 text-indigo-300' : 'border-slate-500/30 bg-slate-500/10 text-slate-400'}`}>
                     {user.role}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => openPermissionsModal(user)}
-                    title="Kelola permission tim"
-                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 transition hover:border-emerald-400/40 hover:bg-emerald-500/20"
-                  >
-                    <ShieldIcon />
-                  </button>
+                  <div className="flex gap-1">
+                    {user.departments.map((d) => {
+                      const dept = DEPARTMENTS.find((x) => x.value === d);
+                      return (
+                        <span key={d} className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
+                          {dept?.icon} {dept?.label}
+                        </span>
+                      );
+                    })}
+                  </div>
                   <button
                     type="button"
                     disabled={user.id === currentUser?.id || deletingUserId === user.id}
@@ -464,23 +506,23 @@ function UserManagement() {
 
       {/* Toast notification */}
       {toast && (
-        <div className={`fixed right-5 top-5 z-[60] flex items-center gap-3 rounded-2xl border px-5 py-3.5 shadow-2xl shadow-black/40 backdrop-blur-md transition-all duration-300 ${
+        <div className={`fixed right-5 top-5 z-[100] flex max-w-md items-start gap-3 rounded-2xl border px-5 py-3.5 shadow-2xl shadow-black/40 backdrop-blur-md transition-all duration-300 ${
           toast.type === 'success'
             ? 'border-emerald-400/20 bg-emerald-500/15 text-emerald-300'
             : 'border-red-400/20 bg-red-500/15 text-red-300'
         }`}>
-          <div className={`flex h-7 w-7 items-center justify-center rounded-xl ${
+          <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl ${
             toast.type === 'success'
               ? 'bg-emerald-500/20'
               : 'bg-red-500/20'
           }`}>
             {toast.type === 'success' ? <CheckIcon /> : <XIcon />}
           </div>
-          <p className="text-sm font-semibold">{toast.message}</p>
+          <p className="min-w-0 flex-1 text-sm font-semibold leading-relaxed">{toast.message}</p>
           <button
             type="button"
             onClick={() => setToast(null)}
-            className="ml-2 flex h-5 w-5 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-slate-200"
+            className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/10 hover:text-slate-200"
           >
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
               <path d="M18 6L6 18" /><path d="M6 6l12 12" />

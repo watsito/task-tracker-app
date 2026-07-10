@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { Prisma } from '@/generated/prisma/client';
+import { Prisma, Department as DbDepartment } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin, toAppUser } from '@/lib/auth';
-import type { UserRole } from '@/features/tasks/types/user';
+import type { Department, UserRole } from '@/features/tasks/types/user';
 
 export async function GET() {
   try {
@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
       email?: string;
       password?: string;
       role?: UserRole;
+      departments?: Department[];
       permissions?: Record<string, unknown>;
     };
 
@@ -35,15 +36,20 @@ export async function POST(request: NextRequest) {
     const email = body.email?.trim().toLowerCase();
     const password = body.password ?? '';
     const role = body.role === 'admin' ? 'ADMIN' : 'MEMBER';
+    const departments = (body.departments ?? []).map((d) => d.toUpperCase() as DbDepartment);
     const permissions = body.permissions as Prisma.InputJsonValue | undefined;
 
     if (!name || !email || password.length < 8) {
       return NextResponse.json({ error: 'Name, valid email, and password min 8 chars are required' }, { status: 400 });
     }
 
+    if (departments.length === 0) {
+      return NextResponse.json({ error: 'At least one department is required' }, { status: 400 });
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { name, email, passwordHash, role, permissions },
+      data: { name, email, passwordHash, role, departments, permissions },
     });
 
     return NextResponse.json(toAppUser(user), { status: 201 });
@@ -52,6 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    return NextResponse.json({ error: 'Failed to create user' }, { status: 400 });
+    console.error('[POST /api/users]', error);
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed to create user' }, { status: 400 });
   }
 }

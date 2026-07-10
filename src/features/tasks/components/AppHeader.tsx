@@ -1,19 +1,32 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useEffectEvent } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import HeaderUser from './HeaderUser';
+import DepartmentSwitcher from './DepartmentSwitcher';
 import { useAuthStore } from '../store/authStore';
 import { useTheme } from '@/contexts/ThemeContext';
-import { PageKey, PAGE_ROUTES } from '../types/user';
+import { PageKey } from '../types/user';
 
-const FORM_TEAMS = ['Marketing', 'Management', 'Frontend', 'Backend', 'Design', 'QA', 'Product'] as const;
-
-const NAV = [
+const NAV_OPERATIONAL = [
   { href: '/', label: 'Board', icon: BoardIcon, page: 'board' as PageKey },
   { href: '/reports', label: 'Reports', icon: ReportsIcon, page: 'reports' as PageKey },
-  { href: '/integrations', label: 'Integrations', icon: IntegrationsIcon, page: 'integrations' as PageKey },
+];
+
+const NAV_MARKETING = [
+  { href: '/', label: 'Board', icon: BoardIcon, page: 'board' as PageKey },
+  { href: '/lead-sources', label: 'Form', icon: LeadsIcon, page: 'form' as PageKey },
+  { href: '/reports', label: 'Reports', icon: ReportsIcon, page: 'reports' as PageKey },
+];
+
+const NAV_MANAGEMENT = [
+  { href: '/', label: 'Board', icon: BoardIcon, page: 'board' as PageKey },
+];
+
+const NAV_ALL = [
+  ...NAV_OPERATIONAL,
+  { href: '/lead-sources', label: 'Form', icon: LeadsIcon, page: 'form' as PageKey },
 ];
 
 function hasPageAccess(user: { role: string; permissions?: { pages?: Record<string, boolean> } } | null, page: PageKey): boolean {
@@ -25,14 +38,24 @@ function hasPageAccess(user: { role: string; permissions?: { pages?: Record<stri
 export default function AppHeader() {
   const pathname = usePathname();
   const currentUser = useAuthStore((s) => s.currentUser);
+  const currentDepartment = useAuthStore((s) => s.currentDepartment);
+
+  const isAdmin = currentUser?.role === 'admin';
+  const hasBothDepts = !isAdmin && currentUser?.departments && currentUser.departments.length > 1;
+  const baseNav = isAdmin
+    ? NAV_ALL
+    : currentDepartment === 'MANAGEMENT'
+      ? NAV_MANAGEMENT
+      : hasBothDepts
+        ? NAV_ALL
+        : currentDepartment === 'MARKETING'
+          ? NAV_MARKETING
+          : NAV_OPERATIONAL;
+
   const navItems = useMemo(() => {
-    const items = NAV.filter((item) => hasPageAccess(currentUser, item.page));
-    if (hasPageAccess(currentUser, 'users')) {
-      items.push({ href: '/users', label: 'Users', icon: UsersIcon, page: 'users' as PageKey });
-    }
-    return items;
-  }, [currentUser]);
-  const canAccessForm = hasPageAccess(currentUser, 'form');
+    return baseNav.filter((item) => hasPageAccess(currentUser, item.page));
+  }, [currentUser, baseNav]);
+
   const { theme, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -99,25 +122,14 @@ export default function AppHeader() {
               );
             })}
 
-            {/* Form link */}
-            {canAccessForm && (
-              <Link
-                href="/lead-sources"
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
-                  pathname === '/lead-sources'
-                    ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-slate-100'
-                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-200'
-                }`}
-              >
-                <LeadsIcon />
-                Form
-              </Link>
-            )}
           </div>
         </div>
 
         {/* Right: Desktop extras + User */}
         <div className="flex items-center gap-2">
+          {/* Department Switcher */}
+          <DepartmentSwitcher />
+
           {/* Notification bell */}
           <NotificationBell />
 
@@ -179,23 +191,6 @@ export default function AppHeader() {
               </Link>
             );
           })}
-
-          {/* Form link in mobile */}
-          {canAccessForm && (
-            <Link
-              href="/lead-sources"
-              onClick={() => setMenuOpen(false)}
-              className={`flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium transition ${
-                pathname === '/lead-sources'
-                  ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300'
-                  : 'text-gray-600 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-white/5'
-              }`}
-            >
-              <LeadsIcon />
-              Form
-              {pathname === '/lead-sources' && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-indigo-400" />}
-            </Link>
-          )}
         </nav>
 
       </div>
@@ -222,7 +217,7 @@ function NotificationBell() {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useEffectEvent(async () => {
     try {
       const res = await fetch('/api/notifications');
       if (res.ok) {
@@ -230,19 +225,26 @@ function NotificationBell() {
         if (Array.isArray(data)) setNotifications(data);
       }
     } catch {}
-  }, []);
+  });
 
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, [fetchNotifications]);
+    const timeout = setTimeout(() => {
+      void fetchNotifications();
+    }, 0);
+    const interval = setInterval(() => {
+      void fetchNotifications();
+    }, 30000);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     fetch('/api/notifications/check-deadlines', { method: 'POST' })
       .then(() => fetchNotifications())
       .catch(() => {});
-  }, [fetchNotifications]);
+  }, []);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -357,29 +359,12 @@ function ReportsIcon() {
     </svg>
   );
 }
-function IntegrationsIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10" />
-    </svg>
-  );
-}
 function LeadsIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 19V5" />
       <path d="M4 19h16" />
       <path d="M8 15l3-4 3 2 4-6" />
-    </svg>
-  );
-}
-function UsersIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 00-3-3.87" />
-      <path d="M16 3.13a4 4 0 010 7.75" />
     </svg>
   );
 }

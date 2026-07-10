@@ -7,6 +7,38 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
+export async function GET(_request: NextRequest, context: RouteContext) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const { id } = await context.params;
+    const entry = await prisma.leadSource.findUnique({
+      where: { id },
+      include: {
+        createdBy: { select: { id: true, name: true } },
+        updatedBy: { select: { id: true, name: true } },
+        entries: {
+          orderBy: { createdAt: 'desc' },
+          include: { createdBy: { select: { id: true, name: true } } },
+        },
+      },
+    });
+
+    if (!entry) {
+      return NextResponse.json({ error: 'Lead source not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(entry);
+  } catch (error) {
+    console.error('[GET /api/lead-sources/[id]]', error);
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed to fetch lead source' }, { status: 400 });
+  }
+}
+
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const user = await getCurrentUser();
@@ -34,7 +66,25 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         ...(body.totalLeads !== undefined ? { totalLeads: body.totalLeads } : {}),
         updatedById: user.id,
       },
-      include: { createdBy: { select: { id: true, name: true } }, updatedBy: { select: { id: true, name: true } } },
+      include: {
+        createdBy: { select: { id: true, name: true } },
+        updatedBy: { select: { id: true, name: true } },
+        entries: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            channel: true,
+            name: true,
+            phoneNumber: true,
+            email: true,
+            companyName: true,
+            jobTitle: true,
+            typeOfNeed: true,
+            infoSource: true,
+            createdAt: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(entry);

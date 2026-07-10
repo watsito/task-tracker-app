@@ -7,7 +7,25 @@ export async function GET() {
   try {
     const entries = await prisma.leadSource.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { createdBy: { select: { id: true, name: true } }, updatedBy: { select: { id: true, name: true } } },
+      include: {
+        createdBy: { select: { id: true, name: true } },
+        updatedBy: { select: { id: true, name: true } },
+        entries: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            channel: true,
+            name: true,
+            phoneNumber: true,
+            email: true,
+            companyName: true,
+            jobTitle: true,
+            typeOfNeed: true,
+            infoSource: true,
+            createdAt: true,
+          },
+        },
+      },
     });
     return NextResponse.json(entries);
   } catch {
@@ -45,7 +63,25 @@ export async function POST(request: Request) {
         createdById: user.id,
         updatedById: user.id,
       },
-      include: { createdBy: { select: { id: true, name: true } }, updatedBy: { select: { id: true, name: true } } },
+      include: {
+        createdBy: { select: { id: true, name: true } },
+        updatedBy: { select: { id: true, name: true } },
+        entries: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            channel: true,
+            name: true,
+            phoneNumber: true,
+            email: true,
+            companyName: true,
+            jobTitle: true,
+            typeOfNeed: true,
+            infoSource: true,
+            createdAt: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(entry);

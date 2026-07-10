@@ -172,6 +172,7 @@ export default function LoginPage() {
             <div className="flex flex-col gap-1.5">
               <label htmlFor="login-email" className="text-xs font-medium text-slate-400">Email</label>
               <input
+                suppressHydrationWarning
                 id="login-email"
                 type="email"
                 autoComplete="email"
@@ -187,6 +188,7 @@ export default function LoginPage() {
               <label htmlFor="login-password" className="text-xs font-medium text-slate-400">Password</label>
               <div className="relative">
                 <input
+                  suppressHydrationWarning
                   id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
@@ -196,6 +198,7 @@ export default function LoginPage() {
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 pr-10 text-sm text-slate-100 placeholder-slate-600 outline-none transition-all duration-150 focus:border-indigo-500/60 focus:bg-indigo-500/5 focus:ring-1 focus:ring-indigo-500/25"
                 />
                 <button
+                  suppressHydrationWarning
                   type="button"
                   id="toggle-password-visibility"
                   onClick={() => setShowPassword((v) => !v)}
@@ -216,6 +219,7 @@ export default function LoginPage() {
 
             {/* Submit */}
             <button
+              suppressHydrationWarning
               id="submit-login"
               type="submit"
               disabled={isLoading || isPending}

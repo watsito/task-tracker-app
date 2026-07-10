@@ -1,14 +1,18 @@
 import { create } from 'zustand';
-import { AppUser, UserRole } from '../types/user';
+import { AppUser, Department, UserRole } from '../types/user';
+
+const DEPARTMENT_STORAGE_KEY = 'task_tracker_department';
 
 interface AuthState {
   currentUser: AppUser | null;
+  currentDepartment: Department;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
   setRole: (role: UserRole) => void;
+  switchDepartment: (department: Department) => void;
 }
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -28,8 +32,32 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function getStoredDepartment(): Department | null {
+  if (typeof window === 'undefined') return null;
+  const stored = localStorage.getItem(DEPARTMENT_STORAGE_KEY);
+  if (stored === 'MARKETING' || stored === 'OPERATIONAL' || stored === 'MANAGEMENT') return stored;
+  return null;
+}
+
+function getDefaultDepartment(user: AppUser): Department {
+  const stored = getStoredDepartment();
+  if (user.departments.length === 0) return stored ?? 'OPERATIONAL';
+  if (stored && user.departments.includes(stored)) return stored;
+  if (user.departments.includes('OPERATIONAL')) return 'OPERATIONAL';
+  if (user.departments.includes('MARKETING')) return 'MARKETING';
+  if (user.departments.includes('MANAGEMENT')) return 'MANAGEMENT';
+  return 'OPERATIONAL';
+}
+
+function saveDepartment(department: Department) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(DEPARTMENT_STORAGE_KEY, department);
+  }
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   currentUser: null,
+  currentDepartment: 'OPERATIONAL',
   isAuthenticated: false,
   isLoading: true,
 
@@ -39,12 +67,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       body: JSON.stringify({ email, password }),
     });
 
-    set({ currentUser: user, isAuthenticated: true, isLoading: false });
+    const dept = getDefaultDepartment(user);
+    saveDepartment(dept);
+    set({ currentUser: user, currentDepartment: dept, isAuthenticated: true, isLoading: false });
   },
 
   logout: async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    set({ currentUser: null, isAuthenticated: false, isLoading: false });
+    localStorage.removeItem(DEPARTMENT_STORAGE_KEY);
+    set({ currentUser: null, currentDepartment: 'OPERATIONAL', isAuthenticated: false, isLoading: false });
   },
 
   checkSession: async () => {
@@ -52,9 +83,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     try {
       const user = await requestJson<AppUser>('/api/auth/me');
-      set({ currentUser: user, isAuthenticated: true, isLoading: false });
+      const dept = getDefaultDepartment(user);
+      set({ currentUser: user, currentDepartment: dept, isAuthenticated: true, isLoading: false });
     } catch {
-      set({ currentUser: null, isAuthenticated: false, isLoading: false });
+      set({ currentUser: null, currentDepartment: 'OPERATIONAL', isAuthenticated: false, isLoading: false });
     }
   },
 
@@ -64,4 +96,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         ? { ...state.currentUser, role }
         : null,
     })),
+
+  switchDepartment: (department) => {
+    saveDepartment(department);
+    set({ currentDepartment: department });
+  },
 }));

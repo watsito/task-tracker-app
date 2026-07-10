@@ -1,9 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useTaskStore } from '../store/taskStore';
 import { useAuthStore } from '../store/authStore';
-import { useTheme } from '@/contexts/ThemeContext';
 import { TaskStatus, TaskPriority, Task } from '../types/task';
 import { Milestone, Project } from '@/features/projects/types/project';
 import TaskCard from './TaskCard';
@@ -371,7 +371,6 @@ export default function TaskBoard() {
 
   const [modalState, setModalState] = useState<{ type: 'add', status: TaskStatus } | { type: 'edit', task: Task } | null>(null);
   const [activeTab, setActiveTab] = useState<TaskStatus>('To Do');
-  const [viewMode, setViewMode] = useState<'board' | 'dashboard'>('board');
   
   // Advanced Filtering States
   const [filterMyTasks, setFilterMyTasks] = useState(false);
@@ -418,63 +417,34 @@ export default function TaskBoard() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-slate-100">
-              {viewMode === 'board' ? 'Project Board' : 'Dashboard'}
+              Project Board
             </h1>
-            <div className="flex rounded-xl border border-gray-200 bg-gray-100 p-0.5 dark:border-white/10 dark:bg-white/5">
-              <button
-                onClick={() => setViewMode('board')}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
-                  viewMode === 'board'
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200'
-                }`}
-              >
-                <BoardIcon />
-                Board
-              </button>
-              <button
-                onClick={() => setViewMode('dashboard')}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
-                  viewMode === 'dashboard'
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200'
-                }`}
-              >
-                <ChartIcon />
-                Dashboard
-              </button>
-            </div>
           </div>
-          {viewMode === 'board' && (
-            <>
-              <p className="mt-0.5 text-sm text-slate-400">
-                {activeTasks.length} active task{activeTasks.length !== 1 ? 's' : ''}
-                {isAdmin && deletedCount > 0 && (
-                  <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600 dark:bg-red-500/15 dark:text-red-400">
-                    <span className="h-1.5 w-1.5 rounded-full bg-red-500 dark:bg-red-400" />
-                    {deletedCount} archived
-                  </span>
-                )}
-              </p>
-              {(overdueCount > 0 || dueSoonCount > 0) && (
-                <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold">
-                  {overdueCount > 0 && (
-                    <span className="rounded-full border border-red-300 bg-red-50 px-2.5 py-1 text-red-700 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-300">
-                      {overdueCount} overdue
-                    </span>
-                  )}
-                  {dueSoonCount > 0 && (
-                    <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
-                      {dueSoonCount} due soon
-                    </span>
-                  )}
-                </div>
+          <p className="mt-0.5 text-sm text-slate-400">
+            {activeTasks.length} active task{activeTasks.length !== 1 ? 's' : ''}
+            {isAdmin && deletedCount > 0 && (
+              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600 dark:bg-red-500/15 dark:text-red-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500 dark:bg-red-400" />
+                {deletedCount} archived
+              </span>
+            )}
+          </p>
+          {(overdueCount > 0 || dueSoonCount > 0) && (
+            <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold">
+              {overdueCount > 0 && (
+                <span className="rounded-full border border-red-300 bg-red-50 px-2.5 py-1 text-red-700 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-300">
+                  {overdueCount} overdue
+                </span>
               )}
-            </>
+              {dueSoonCount > 0 && (
+                <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300">
+                  {dueSoonCount} due soon
+                </span>
+              )}
+            </div>
           )}
         </div>
 
-        {viewMode === 'board' && (
         <div className="flex items-center gap-3">
           {/* Filters */}
           <div className="hidden sm:flex items-center gap-2 mr-2">
@@ -510,20 +480,27 @@ export default function TaskBoard() {
             </button>
           </div>
 
-          <button
-            id="add-task-btn"
-            onClick={() => setModalState({ type: 'add', status: 'To Do' })}
-            className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:bg-indigo-500 hover:shadow-indigo-500/40 active:scale-95"
-          >
-            <PlusIcon />
-            Add Task
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/operational"
+              className="flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+            >
+              <ChartIcon />
+              View Dashboard
+            </Link>
+            <button
+              id="add-task-btn"
+              onClick={() => setModalState({ type: 'add', status: 'To Do' })}
+              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:bg-indigo-500 hover:shadow-indigo-500/40 active:scale-95"
+            >
+              <PlusIcon />
+              Add Task
+            </button>
+          </div>
         </div>
-        )}
       </div>
 
       {/* Mobile Tab Switcher */}
-      {viewMode === 'board' && (
       <div className="flex shrink-0 xl:hidden overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6 md:-mx-8 md:px-8">
         <div className="flex gap-2">
           {COLUMNS.map((col) => {
@@ -550,11 +527,9 @@ export default function TaskBoard() {
           })}
         </div>
       </div>
-      )}
 
-      {viewMode === 'board' ? (
-        /* Kanban columns */
-        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+      {/* Kanban columns */}
+      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
           <div className="min-h-0 flex-1 overflow-hidden">
             <div className="grid h-full min-h-0 grid-cols-1 gap-4 pb-4 xl:grid-cols-4">
               {COLUMNS.map((col) => {
@@ -576,10 +551,6 @@ export default function TaskBoard() {
             </div>
           </div>
         </DndContext>
-      ) : (
-        /* Dashboard view */
-        <DashboardView />
-      )}
 
       {/* Task Modal (Add/Edit) */}
       {modalState && (
@@ -661,296 +632,12 @@ function PlusIcon() {
 
 function ChartIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 20V10" /><path d="M12 20V4" /><path d="M6 20v-6" />
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+      <line x1="2" y1="20" x2="22" y2="20" />
     </svg>
   );
 }
 
-function BoardIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-      <rect x="1" y="1" width="6" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-      <rect x="9" y="1" width="6" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
-// ─── Dashboard View ─────────────────────────────────────────────────────────
-
-import { Line, Doughnut } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-} from 'chart.js';
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend, Filler);
-
-interface LeadSourceEntry {
-  id: string;
-  team: string;
-  formType: string;
-  title: string;
-  monthLabel: string;
-  period: string;
-  channels: Record<string, number>;
-  totalLeads: number;
-  createdAt: string;
-}
-
-const CHANNEL_LABELS: Record<string, string> = {
-  email: 'Email', googleAds: 'Google Ads', metaAds: 'Meta Ads', tender: 'Tender',
-  socialMedia: 'Social Media', linkedin: 'Linkedin', referral: 'Referral',
-  inboundWa: 'Inbound WA', web: 'Web', ka: 'KA', mes: 'MES',
-  community: 'Community', other: 'Other',
-};
-
-const CHANNEL_ORDER = ['email', 'googleAds', 'metaAds', 'tender', 'socialMedia', 'linkedin', 'referral', 'inboundWa', 'web', 'ka', 'mes', 'community', 'other'];
-
-function DashboardView() {
-  const [entries, setEntries] = useState<LeadSourceEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { theme } = useTheme();
-
-  useEffect(() => {
-    fetch('/api/lead-sources')
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setEntries(data); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex flex-1 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-indigo-500" />
-      </div>
-    );
-  }
-
-  const totalLeads = entries.reduce((sum, e) => sum + e.totalLeads, 0);
-
-  const teamBreakdown: Record<string, number> = {};
-  entries.forEach((e) => {
-    teamBreakdown[e.team] = (teamBreakdown[e.team] || 0) + e.totalLeads;
-  });
-
-  const channelBreakdown: Record<string, number> = {};
-  entries.forEach((e) => {
-    Object.entries(e.channels).forEach(([ch, count]) => {
-      channelBreakdown[ch] = (channelBreakdown[ch] || 0) + count;
-    });
-  });
-
-  const chartLabels = CHANNEL_ORDER.filter((ch) => channelBreakdown[ch] > 0).map((ch) => CHANNEL_LABELS[ch] || ch);
-  const chartData = CHANNEL_ORDER.filter((ch) => channelBreakdown[ch] > 0).map((ch) => channelBreakdown[ch]);
-
-  const latestEntry = entries[0];
-
-  const doughnutColors = [
-    'rgba(99, 102, 241, 0.85)', 'rgba(168, 85, 247, 0.85)', 'rgba(236, 72, 153, 0.85)',
-    'rgba(245, 158, 11, 0.85)', 'rgba(16, 185, 129, 0.85)', 'rgba(59, 130, 246, 0.85)',
-    'rgba(239, 68, 68, 0.85)', 'rgba(139, 92, 246, 0.85)', 'rgba(20, 184, 166, 0.85)',
-    'rgba(251, 146, 60, 0.85)', 'rgba(34, 197, 94, 0.85)', 'rgba(168, 162, 158, 0.85)',
-    'rgba(14, 165, 233, 0.85)',
-  ];
-
-  const isDark = theme === 'dark';
-
-  const lineChartData = {
-    labels: chartLabels,
-    datasets: [
-      {
-        label: 'Leads',
-        data: chartData,
-        borderColor: 'rgba(99, 102, 241, 1)',
-        backgroundColor: isDark ? 'rgba(99, 102, 241, 0.1)' : 'rgba(99, 102, 241, 0.08)',
-        borderWidth: 2.5,
-        pointBackgroundColor: 'rgba(99, 102, 241, 1)',
-        pointBorderColor: isDark ? '#0f172a' : '#e5e7eb',
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        tension: 0.4,
-        fill: true,
-      },
-    ],
-  };
-
-  const lineChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-        titleColor: isDark ? '#e2e8f0' : '#1a1a1a',
-        bodyColor: isDark ? '#cbd5e1' : '#4b5563',
-        borderColor: 'rgba(99, 102, 241, 0.3)',
-        borderWidth: 1,
-        cornerRadius: 12,
-        padding: 12,
-      },
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { color: isDark ? '#94a3b8' : '#6b7280', font: { size: 11 }, maxRotation: 45 },
-      },
-      y: {
-        grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)' },
-        ticks: { color: isDark ? '#94a3b8' : '#6b7280', font: { size: 11 } },
-        beginAtZero: true,
-      },
-    },
-  };
-
-  const teamLabels = Object.keys(teamBreakdown).sort((a, b) => teamBreakdown[b] - teamBreakdown[a]);
-  const teamData = teamLabels.map((t) => teamBreakdown[t]);
-
-  const doughnutChartData = {
-    labels: teamLabels,
-    datasets: [
-      {
-        data: teamData,
-        backgroundColor: doughnutColors.slice(0, teamLabels.length),
-        borderColor: isDark ? '#0f172a' : '#ffffff',
-        borderWidth: 3,
-        hoverOffset: 8,
-      },
-    ],
-  };
-
-  const doughnutChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '65%',
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: { color: isDark ? '#94a3b8' : '#6b7280', padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 11 } },
-      },
-      tooltip: {
-        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-        titleColor: isDark ? '#e2e8f0' : '#1a1a1a',
-        bodyColor: isDark ? '#cbd5e1' : '#4b5563',
-        borderColor: 'rgba(99, 102, 241, 0.3)',
-        borderWidth: 1,
-        cornerRadius: 12,
-        padding: 12,
-      },
-    },
-  };
-
-  return (
-    <div className="min-h-0 flex-1 overflow-y-auto pb-4">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-500">Total Leads</p>
-          <p className="mt-2 text-3xl font-black tabular-nums text-gray-900 dark:text-white">{totalLeads}</p>
-          <p className="mt-3 text-xs text-gray-500 dark:text-slate-500">dari {entries.length} entri</p>
-        </div>
-        <div className="rounded-2xl border border-indigo-300 bg-indigo-50 p-5 dark:border-indigo-500/20 dark:bg-indigo-500/5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600/70 dark:text-indigo-400/70">Tim Aktif</p>
-          <p className="mt-2 text-3xl font-black tabular-nums text-indigo-600 dark:text-indigo-400">{Object.keys(teamBreakdown).length}</p>
-          <p className="mt-3 text-xs text-indigo-600/60 dark:text-indigo-400/60">tim yang input data</p>
-        </div>
-        <div className="rounded-2xl border border-emerald-300 bg-emerald-50 p-5 dark:border-emerald-500/20 dark:bg-emerald-500/5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600/70 dark:text-emerald-400/70">Channel Aktif</p>
-          <p className="mt-2 text-3xl font-black tabular-nums text-emerald-600 dark:text-emerald-400">{Object.keys(channelBreakdown).length}</p>
-          <p className="mt-3 text-xs text-emerald-600/60 dark:text-emerald-400/60">sumber leads</p>
-        </div>
-        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-500/20 dark:bg-amber-500/5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-amber-600/70 dark:text-amber-400/70">Rata-rata</p>
-          <p className="mt-2 text-3xl font-black tabular-nums text-amber-600 dark:text-amber-400">{entries.length > 0 ? Math.round(totalLeads / entries.length) : 0}</p>
-          <p className="mt-3 text-xs text-amber-600/60 dark:text-amber-400/60">leads per entri</p>
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80 lg:col-span-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">
-                {latestEntry ? `Sumber Leads Periode ${latestEntry.period}` : 'Sumber Leads'}
-              </h3>
-              <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">Jumlah Leads = {totalLeads}</p>
-            </div>
-            <div className="rounded-xl border border-indigo-300 bg-indigo-50 px-3 py-1.5 dark:border-indigo-500/20 dark:bg-indigo-500/10">
-              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-300">{entries.length} entri</span>
-            </div>
-          </div>
-          <div className="mt-5 h-72">
-            {chartLabels.length > 0 ? (
-              <Line data={lineChartData} options={lineChartOptions} />
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-gray-400 dark:text-slate-500">Belum ada data. Simpan data dari form terlebih dahulu.</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Distribusi per Tim</h3>
-          <div className="mt-4 h-64">
-            {teamLabels.length > 0 ? (
-              <Doughnut data={doughnutChartData} options={doughnutChartOptions} />
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-gray-400 dark:text-slate-500">Belum ada data.</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Top Channels</h3>
-          <div className="mt-4 space-y-2.5">
-            {Object.entries(channelBreakdown)
-              .sort(([, a], [, b]) => b - a)
-              .slice(0, 6)
-              .map(([ch, count]) => (
-                <div key={ch} className="flex items-center gap-3">
-                  <span className="w-28 text-xs font-medium text-gray-500 dark:text-slate-400">{CHANNEL_LABELS[ch] || ch}</span>
-                  <div className="flex-1 h-2.5 overflow-hidden rounded-full bg-gray-200 dark:bg-white/5">
-                    <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-600" style={{ width: totalLeads > 0 ? `${(count / totalLeads) * 100}%` : '0%' }} />
-                  </div>
-                  <span className="w-8 text-right text-xs font-bold tabular-nums text-gray-700 dark:text-slate-300">{count}</span>
-                </div>
-              ))}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Entri Terbaru</h3>
-          {entries.length === 0 ? (
-            <p className="mt-4 text-sm text-gray-400 dark:text-slate-500">Belum ada data.</p>
-          ) : (
-            <div className="mt-4 space-y-2">
-              {entries.slice(0, 5).map((e) => (
-                <div key={e.id} className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-white/[0.06] dark:bg-white/[0.02]">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-gray-800 dark:text-slate-200">{e.title}</p>
-                    <p className="text-xs text-gray-500 dark:text-slate-500">{e.team} &middot; {e.monthLabel}</p>
-                  </div>
-                  <span className="ml-3 shrink-0 rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-bold tabular-nums text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">{e.totalLeads}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
