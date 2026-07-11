@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import xmlrpc from 'xmlrpc';
+import { authenticateOdoo, executeKw } from '@/lib/odooXmlRpc';
 
 type OdooMany2One = [number, string];
 
@@ -30,77 +30,6 @@ type OdooTaskGroup = {
   project_id_count: number;
 };
 
-function getOdooConfig() {
-  const url = process.env.ODOO_URL?.trim();
-  const database = process.env.ODOO_DB?.trim();
-  const username = process.env.ODOO_USERNAME?.trim();
-  const password = process.env.ODOO_PASSWORD?.trim() || process.env.ODOO_API_KEY?.trim();
-
-  if (!url || !database || !username || !password) {
-    throw new Error('ODOO_URL, ODOO_DB, ODOO_USERNAME, dan ODOO_PASSWORD/ODOO_API_KEY harus diisi di .env.');
-  }
-
-  return { url: url.replace(/\/$/, ''), database, username, password };
-}
-
-function createMethodCaller<T>(client: xmlrpc.Client, method: string, params: unknown[]) {
-  return new Promise<T>((resolve, reject) => {
-    client.methodCall(method, params, (error, value) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-
-      resolve(value as T);
-    });
-  });
-}
-
-async function authenticate() {
-  const { url, database, username, password } = getOdooConfig();
-  const commonClient = xmlrpc.createSecureClient({
-    url: `${url}/xmlrpc/2/common`,
-  });
-
-  const uid = await createMethodCaller<number>(commonClient, 'authenticate', [
-    database,
-    username,
-    password,
-    {},
-  ]);
-
-  if (!uid) {
-    throw new Error('Autentikasi ke Odoo gagal. Periksa kembali kredensial di .env.');
-  }
-
-  const objectClient = xmlrpc.createSecureClient({
-    url: `${url}/xmlrpc/2/object`,
-  });
-
-  return { url, database, username, password, uid, objectClient };
-}
-
-async function executeKw<T>(
-  objectClient: xmlrpc.Client,
-  database: string,
-  uid: number,
-  password: string,
-  model: string,
-  method: string,
-  args: unknown[],
-  kwargs: Record<string, unknown> = {}
-) {
-  return createMethodCaller<T>(objectClient, 'execute_kw', [
-    database,
-    uid,
-    password,
-    model,
-    method,
-    args,
-    kwargs,
-  ]);
-}
-
 function getInitials(name: string | undefined) {
   if (!name) return '?';
   const parts = name
@@ -116,57 +45,26 @@ function getInitials(name: string | undefined) {
 
 export async function GET() {
   try {
-    const { database, password, uid, objectClient } = await authenticate();
+    const { database, password, uid } = await authenticateOdoo();
 
     const [stages, projects, taskGroups] = await Promise.all([
-      executeKw<OdooProjectStage[]>(
-        objectClient,
-        database,
-        uid,
-        password,
-        'project.project.stage',
-        'search_read',
-        [[]],
-        { fields: ['id', 'name', 'sequence'], order: 'sequence asc' }
-      ),
-      executeKw<OdooProjectRecord[]>(
-        objectClient,
-        database,
-        uid,
-        password,
-        'project.project',
-        'search_read',
-        [[]],
-        {
-          fields: ['id', 'name', 'stage_id', 'is_favorite', 'user_id', 'tag_ids', 'date_start', 'date'],
-          order: 'name asc',
-          limit: 500,
-        }
-      ),
-      executeKw<OdooTaskGroup[]>(
-        objectClient,
-        database,
-        uid,
-        password,
-        'project.task',
-        'read_group',
-        [[], ['project_id'], ['project_id']],
-        {}
-      ),
+      executeKw<OdooProjectStage[]>(database, uid, password, 'project.project.stage', 'search_read', [[]], {
+        fields: ['id', 'name', 'sequence'],
+        order: 'sequence asc',
+      }),
+      executeKw<OdooProjectRecord[]>(database, uid, password, 'project.project', 'search_read', [[]], {
+        fields: ['id', 'name', 'stage_id', 'is_favorite', 'user_id', 'tag_ids', 'date_start', 'date'],
+        order: 'name asc',
+        limit: 500,
+      }),
+      executeKw<OdooTaskGroup[]>(database, uid, password, 'project.task', 'read_group', [[], ['project_id'], ['project_id']], {}),
     ]);
 
     const tagIds = Array.from(new Set(projects.flatMap((project) => project.tag_ids)));
     const tags = tagIds.length
-      ? await executeKw<OdooTagRecord[]>(
-          objectClient,
-          database,
-          uid,
-          password,
-          'project.tags',
-          'read',
-          [tagIds],
-          { fields: ['id', 'name'] }
-        )
+      ? await executeKw<OdooTagRecord[]>(database, uid, password, 'project.tags', 'read', [tagIds], {
+          fields: ['id', 'name'],
+        })
       : [];
 
     const taskCountByProjectId = new Map<number, number>(
@@ -193,7 +91,7 @@ export async function GET() {
         ownerName: Array.isArray(project.user_id) ? project.user_id[1] : null,
         ownerInitials: getInitials(Array.isArray(project.user_id) ? project.user_id[1] : undefined),
         tagIds: project.tag_ids,
-        tagNames: project.tag_ids.map((tagId) => tagNameById.get(tagId)).filter(Boolean),
+        tagNames: project.tag_ids.map((tagId) => tagNameById.get(tagId)).filter((tagName): tagName is string => Boolean(tagName)),
         dateStart: project.date_start || null,
         dateEnd: project.date || null,
         taskCount: taskCountByProjectId.get(project.id) ?? 0,
