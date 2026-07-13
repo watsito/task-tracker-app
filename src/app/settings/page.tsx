@@ -87,7 +87,7 @@ function SettingsContent() {
 
 // ─── Role & Permission Tab ─────────────────────────────────────────────────
 
-type RoleKey = 'admin' | 'member-ops' | 'member-mkt' | 'member-mgmt' | 'member-all';
+type RoleKey = 'admin' | 'member-ops' | 'member-mkt' | 'member-mgmt' | 'member-all' | 'member-finance';
 
 type RoleOption = {
   key: RoleKey;
@@ -109,6 +109,8 @@ const DEFAULT_ROLE_PAGE_ACCESS: RolePageAccess = {
     users: true,
     settings: true,
     operationalDashboard: true,
+    financeBoard: true,
+    financeForm: true,
   },
   'member-ops': {
     board: true,
@@ -118,6 +120,8 @@ const DEFAULT_ROLE_PAGE_ACCESS: RolePageAccess = {
     users: false,
     settings: false,
     operationalDashboard: true,
+    financeBoard: false,
+    financeForm: false,
   },
   'member-mkt': {
     board: true,
@@ -127,6 +131,8 @@ const DEFAULT_ROLE_PAGE_ACCESS: RolePageAccess = {
     users: false,
     settings: false,
     operationalDashboard: false,
+    financeBoard: false,
+    financeForm: false,
   },
   'member-mgmt': {
     board: true,
@@ -136,6 +142,8 @@ const DEFAULT_ROLE_PAGE_ACCESS: RolePageAccess = {
     users: false,
     settings: false,
     operationalDashboard: false,
+    financeBoard: false,
+    financeForm: false,
   },
   'member-all': {
     board: true,
@@ -145,6 +153,19 @@ const DEFAULT_ROLE_PAGE_ACCESS: RolePageAccess = {
     users: false,
     settings: false,
     operationalDashboard: true,
+    financeBoard: true,
+    financeForm: true,
+  },
+  'member-finance': {
+    board: false,
+    reports: false,
+    integrations: false,
+    form: false,
+    users: false,
+    settings: false,
+    operationalDashboard: false,
+    financeBoard: true,
+    financeForm: true,
   },
 };
 
@@ -154,6 +175,7 @@ const ROLE_OPTIONS: RoleOption[] = [
   { key: 'member-mkt', label: 'Member - Marketing', desc: 'Akses lead sources & form', icon: '📣' },
   { key: 'member-mgmt', label: 'Member - Management', desc: 'Akses management board overview', icon: '📊' },
   { key: 'member-all', label: 'Member - Operational & Marketing', desc: 'Akses semua department', icon: '🔄' },
+  { key: 'member-finance', label: 'Member - Finance', desc: 'Akses project finance & report', icon: '💼' },
 ];
 
 function RoleAndPermission() {
@@ -172,6 +194,7 @@ function RoleAndPermission() {
         'member-mkt': { ...DEFAULT_ROLE_PAGE_ACCESS['member-mkt'], ...(parsed['member-mkt'] ?? {}) },
         'member-mgmt': { ...DEFAULT_ROLE_PAGE_ACCESS['member-mgmt'], ...(parsed['member-mgmt'] ?? {}) },
         'member-all': { ...DEFAULT_ROLE_PAGE_ACCESS['member-all'], ...(parsed['member-all'] ?? {}) },
+        'member-finance': { ...DEFAULT_ROLE_PAGE_ACCESS['member-finance'], ...(parsed['member-finance'] ?? {}) },
       };
     } catch {
       return DEFAULT_ROLE_PAGE_ACCESS;

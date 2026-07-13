@@ -6,6 +6,7 @@ import AppHeader from '@/features/tasks/components/AppHeader';
 import TaskBoard from '@/features/tasks/components/TaskBoard';
 import MarketingDashboard from '@/features/tasks/components/MarketingDashboard';
 import ManagementDashboard from '@/features/tasks/components/ManagementDashboard';
+import FinanceBoardPageContent from '@/features/finance/components/FinanceBoardPageContent';
 
 export default function HomePage() {
   const currentDepartment = useAuthStore((s) => s.currentDepartment);
@@ -13,8 +14,16 @@ export default function HomePage() {
   return (
     <AuthGuard>
       <AppHeader />
-      <main className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden">
-        {currentDepartment === 'MANAGEMENT' ? <ManagementDashboard /> : currentDepartment === 'MARKETING' ? <MarketingDashboard /> : <TaskBoard />}
+      <main className="relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto">
+        {currentDepartment === 'MANAGEMENT' ? (
+          <ManagementDashboard />
+        ) : currentDepartment === 'MARKETING' ? (
+          <MarketingDashboard />
+        ) : currentDepartment === 'FINANCE' ? (
+          <FinanceBoardPageContent />
+        ) : (
+          <TaskBoard />
+        )}
       </main>
     </AuthGuard>
   );

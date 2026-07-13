@@ -24,9 +24,17 @@ const NAV_MANAGEMENT = [
   { href: '/', label: 'Board', icon: BoardIcon, page: 'board' as PageKey },
 ];
 
+const NAV_FINANCE = [
+  { href: '/finance', label: 'Board', icon: ReportsIcon, page: 'financeBoard' as PageKey },
+  { href: '/finance/form', label: 'Form', icon: LeadsIcon, page: 'financeForm' as PageKey },
+  { href: '/reports', label: 'Reports', icon: ReportsIcon, page: 'reports' as PageKey },
+];
+
 const NAV_ALL = [
   ...NAV_OPERATIONAL,
   { href: '/lead-sources', label: 'Form', icon: LeadsIcon, page: 'form' as PageKey },
+  { href: '/finance', label: 'Finance', icon: ReportsIcon, page: 'financeBoard' as PageKey },
+  { href: '/finance/form', label: 'Finance Form', icon: LeadsIcon, page: 'financeForm' as PageKey },
 ];
 
 function hasPageAccess(user: { role: string; permissions?: { pages?: Record<string, boolean> } } | null, page: PageKey): boolean {
@@ -46,11 +54,13 @@ export default function AppHeader() {
     ? NAV_ALL
     : currentDepartment === 'MANAGEMENT'
       ? NAV_MANAGEMENT
-      : hasBothDepts
-        ? NAV_ALL
-        : currentDepartment === 'MARKETING'
-          ? NAV_MARKETING
-          : NAV_OPERATIONAL;
+      : currentDepartment === 'FINANCE'
+        ? NAV_FINANCE
+        : hasBothDepts
+          ? NAV_ALL
+          : currentDepartment === 'MARKETING'
+            ? NAV_MARKETING
+            : NAV_OPERATIONAL;
 
   const navItems = useMemo(() => {
     return baseNav.filter((item) => hasPageAccess(currentUser, item.page));

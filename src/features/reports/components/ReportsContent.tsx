@@ -6,12 +6,17 @@ import ExportPanel from './ExportPanel';
 import ImportPanel from './ImportPanel';
 import TaskTable from './TaskTable';
 import MarketingReportsContent from './MarketingReportsContent';
+import FinanceReportsContent from './FinanceReportsContent';
 
 export default function ReportsContent() {
   const currentDepartment = useAuthStore((s) => s.currentDepartment);
 
   if (currentDepartment === 'MARKETING') {
     return <MarketingReportsContent />;
+  }
+
+  if (currentDepartment === 'FINANCE') {
+    return <FinanceReportsContent />;
   }
 
   return (

@@ -10,13 +10,15 @@ const ROUTE_TO_PAGE: Record<string, PageKey> = Object.fromEntries(
 );
 
 const PAGE_DEPARTMENT_MAP: Record<PageKey, Department[]> = {
-  board: ['OPERATIONAL', 'MARKETING', 'MANAGEMENT'],
-  reports: ['OPERATIONAL', 'MARKETING'],
+  board: ['OPERATIONAL', 'MARKETING', 'MANAGEMENT', 'FINANCE'],
+  reports: ['OPERATIONAL', 'MARKETING', 'FINANCE'],
   integrations: ['OPERATIONAL'],
   form: ['MARKETING'],
   users: [],
   settings: [],
   operationalDashboard: ['OPERATIONAL', 'MANAGEMENT'],
+  financeBoard: ['FINANCE', 'MANAGEMENT'],
+  financeForm: ['FINANCE'],
 };
 
 function hasPageAccess(user: { role: string; departments?: Department[]; permissions?: { pages?: Record<string, boolean> } } | null, page: PageKey, currentDept: Department): boolean {

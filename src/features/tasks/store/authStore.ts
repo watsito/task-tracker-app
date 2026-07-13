@@ -35,7 +35,7 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
 function getStoredDepartment(): Department | null {
   if (typeof window === 'undefined') return null;
   const stored = localStorage.getItem(DEPARTMENT_STORAGE_KEY);
-  if (stored === 'MARKETING' || stored === 'OPERATIONAL' || stored === 'MANAGEMENT') return stored;
+  if (stored === 'MARKETING' || stored === 'OPERATIONAL' || stored === 'MANAGEMENT' || stored === 'FINANCE') return stored;
   return null;
 }
 
@@ -46,6 +46,7 @@ function getDefaultDepartment(user: AppUser): Department {
   if (user.departments.includes('OPERATIONAL')) return 'OPERATIONAL';
   if (user.departments.includes('MARKETING')) return 'MARKETING';
   if (user.departments.includes('MANAGEMENT')) return 'MANAGEMENT';
+  if (user.departments.includes('FINANCE')) return 'FINANCE';
   return 'OPERATIONAL';
 }
 

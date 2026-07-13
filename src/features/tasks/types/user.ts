@@ -1,11 +1,12 @@
 export type UserRole = 'admin' | 'member';
 
-export type Department = 'MARKETING' | 'OPERATIONAL' | 'MANAGEMENT';
+export type Department = 'MARKETING' | 'OPERATIONAL' | 'MANAGEMENT' | 'FINANCE';
 
 export const DEPARTMENTS: { value: Department; label: string; icon: string; desc: string }[] = [
   { value: 'OPERATIONAL', label: 'Operational', icon: '📋', desc: 'Task board & project management' },
   { value: 'MARKETING', label: 'Marketing', icon: '📣', desc: 'Lead sources & marketing dashboard' },
   { value: 'MANAGEMENT', label: 'Management', icon: '📊', desc: 'Switch between task board and marketing dashboard' },
+  { value: 'FINANCE', label: 'Finance', icon: '💼', desc: 'Project finance, billing termins, and reporting' },
 ];
 
 // ─── Team Permissions ───────────────────────────────────────
@@ -68,6 +69,8 @@ export const PAGES = [
   'users',
   'settings',
   'operationalDashboard',
+  'financeBoard',
+  'financeForm',
 ] as const;
 
 export type PageKey = (typeof PAGES)[number];
@@ -81,6 +84,8 @@ export const PAGE_LABELS: Record<PageKey, string> = {
   users: 'Users (Admin)',
   settings: 'Pengaturan',
   operationalDashboard: 'Operational Dashboard',
+  financeBoard: 'Board Finance',
+  financeForm: 'Finance Form',
 };
 
 /** Page route map */
@@ -92,6 +97,8 @@ export const PAGE_ROUTES: Record<PageKey, string> = {
   users: '/users',
   settings: '/settings',
   operationalDashboard: '/dashboard/operational',
+  financeBoard: '/finance',
+  financeForm: '/finance/form',
 };
 
 export interface PageAccess {
