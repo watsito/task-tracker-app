@@ -209,6 +209,7 @@ async function xmlRpcCall<T>(endpoint: string, method: string, params: unknown[]
     headers: {
       'Content-Type': 'text/xml',
       Accept: 'text/xml',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
     },
     body: buildMethodCall(method, params),
     cache: 'no-store',
