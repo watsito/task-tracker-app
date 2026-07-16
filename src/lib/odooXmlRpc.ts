@@ -204,17 +204,32 @@ export function getOdooConfig(): OdooConfig {
 }
 
 async function xmlRpcCall<T>(endpoint: string, method: string, params: unknown[]) {
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'text/xml',
-      Accept: 'text/xml',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-    },
-    body: buildMethodCall(method, params),
-    cache: 'no-store',
-    redirect: 'follow',
-  });
+  const workerUrl = process.env.ODOO_WORKER_URL?.trim();
+  const xmlBody = buildMethodCall(method, params);
+  const response = workerUrl
+    ? await fetch(workerUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'text/xml',
+        },
+        body: JSON.stringify({
+          endpoint: new URL(endpoint).pathname,
+          xmlBody,
+        }),
+        cache: 'no-store',
+      })
+    : await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/xml',
+          Accept: 'text/xml',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        },
+        body: xmlBody,
+        cache: 'no-store',
+        redirect: 'follow',
+      });
 
   const text = await response.text();
 
