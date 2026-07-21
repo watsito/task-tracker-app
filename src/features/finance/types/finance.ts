@@ -1,6 +1,28 @@
 export type FinanceProjectStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE';
-export type FinanceBillingStatus = 'NOT_BILLABLE' | 'BILLABLE';
-export type FinanceDisbursementStatus = 'NOT_DISBURSED' | 'DISBURSED';
+export type FinanceTerminStatus = 'TO_INVOICE' | 'OPEN_INVOICE' | 'OUTSTANDING' | 'PAID';
+
+export type FinanceTerminAuditAction = 'STATUS_CHANGED' | 'BILLING_DATE_SET' | 'BILLING_DATE_EDITED' | 'PAYMENT_DEADLINE_EDITED';
+
+export interface FinanceTerminAuditRecord {
+  id: string;
+  action: FinanceTerminAuditAction;
+  fromStatus: FinanceTerminStatus | null;
+  toStatus: FinanceTerminStatus | null;
+  metadata: Record<string, unknown> | null;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface FinanceTerminStatusTransitionRequest {
+  targetStatus: FinanceTerminStatus;
+  billingDate?: string | null;
+  paymentDeadline?: string | null;
+}
+
+export interface FinanceTerminDateUpdateRequest {
+  billingDate: string | null;
+  paymentDeadline: string | null;
+}
 
 export interface FinanceTerminInput {
   id?: string;
@@ -8,9 +30,8 @@ export interface FinanceTerminInput {
   name: string;
   percentage: number;
   billingDate: string | null;
+  paymentDeadline: string | null;
   description: string;
-  billingStatus: FinanceBillingStatus;
-  disbursementStatus: FinanceDisbursementStatus;
 }
 
 export interface FinanceProjectInput {
@@ -26,6 +47,7 @@ export interface FinanceProjectInput {
 
 export interface FinanceTermin extends FinanceTerminInput {
   id: string;
+  termStatus: FinanceTerminStatus;
   createdAt: string;
   updatedAt: string;
 }
@@ -57,29 +79,5 @@ export interface FinanceDashboardSummary {
     status: FinanceProjectStatus;
     count: number;
     totalValue: number;
-  }>;
-  terminBillingSummary: Array<{
-    status: FinanceBillingStatus;
-    label: string;
-    count: number;
-    totalValue: number;
-    terminDetails: Array<{
-      projectId: string;
-      projectName: string;
-      count: number;
-      totalValue: number;
-    }>;
-  }>;
-  terminDisbursementSummary: Array<{
-    status: FinanceDisbursementStatus;
-    label: string;
-    count: number;
-    totalValue: number;
-    terminDetails: Array<{
-      projectId: string;
-      projectName: string;
-      count: number;
-      totalValue: number;
-    }>;
   }>;
 }

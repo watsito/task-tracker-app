@@ -50,17 +50,15 @@ export default function AppHeader() {
 
   const isAdmin = currentUser?.role === 'admin';
   const hasBothDepts = !isAdmin && currentUser?.departments && currentUser.departments.length > 1;
-  const baseNav = isAdmin
-    ? NAV_ALL
-    : currentDepartment === 'MANAGEMENT'
-      ? NAV_MANAGEMENT
-      : currentDepartment === 'FINANCE'
-        ? NAV_FINANCE
-        : hasBothDepts
-          ? NAV_ALL
-          : currentDepartment === 'MARKETING'
-            ? NAV_MARKETING
-            : NAV_OPERATIONAL;
+  const baseNav = currentDepartment === 'MANAGEMENT'
+    ? NAV_MANAGEMENT
+    : currentDepartment === 'FINANCE'
+      ? NAV_FINANCE
+      : hasBothDepts
+        ? NAV_ALL
+        : currentDepartment === 'MARKETING'
+          ? NAV_MARKETING
+          : NAV_OPERATIONAL;
 
   const navItems = useMemo(() => {
     return baseNav.filter((item) => hasPageAccess(currentUser, item.page));

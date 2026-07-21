@@ -21,7 +21,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       where: { id },
       include: {
         createdBy: { select: { id: true, name: true } },
-        termins: { orderBy: { order: 'asc' } },
+        termins: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
       },
     });
 
@@ -49,9 +49,29 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     validateFinanceProjectInput(body);
 
     const project = await prisma.$transaction(async (tx) => {
-      await tx.financeTermin.deleteMany({ where: { financeProjectId: id } });
+      const existingProject = await tx.financeProject.findUnique({
+        where: { id },
+        include: { termins: true },
+      });
 
-      return tx.financeProject.update({
+      if (!existingProject) {
+        throw new Error('Finance project not found');
+      }
+
+      const existingTerminIds = new Set(existingProject.termins.map((termin) => termin.id));
+      const submittedExistingIds = body.termins.flatMap((termin) => termin.id ? [termin.id] : []);
+      const invalidTerminId = submittedExistingIds.find((terminId) => !existingTerminIds.has(terminId));
+
+      if (invalidTerminId) {
+        throw new Error('Termin tidak valid untuk project ini.');
+      }
+
+      const submittedIds = new Set(submittedExistingIds);
+      const activeTerminIdsToArchive = existingProject.termins
+        .filter((termin) => !termin.deletedAt && !submittedIds.has(termin.id))
+        .map((termin) => termin.id);
+
+      await tx.financeProject.update({
         where: { id },
         data: {
           clientName: body.clientName.trim(),
@@ -61,26 +81,88 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
           totalProject: body.totalProject,
           status: body.status,
           notes: body.notes.trim(),
-          termins: {
-            create: body.termins.map((termin, index) => ({
-              order: index + 1,
-              name: termin.name.trim(),
-              percentage: termin.percentage,
-              billingDate: termin.billingDate ? new Date(termin.billingDate) : null,
-              description: termin.description.trim(),
-              billingStatus: termin.billingStatus,
-              disbursementStatus: termin.billingStatus === 'BILLABLE' ? termin.disbursementStatus : 'NOT_DISBURSED',
-            })),
-          },
         },
+      });
+
+      if (activeTerminIdsToArchive.length > 0) {
+        await tx.financeTermin.updateMany({
+          where: { id: { in: activeTerminIdsToArchive }, financeProjectId: id, deletedAt: null },
+          data: { deletedAt: new Date() },
+        });
+      }
+
+      for (const [index, termin] of body.termins.entries()) {
+        const billingDate = termin.billingDate ? new Date(termin.billingDate) : null;
+        const paymentDeadline = termin.paymentDeadline ? new Date(termin.paymentDeadline) : null;
+        const editableData = {
+          order: index + 1,
+          name: termin.name.trim(),
+          percentage: termin.percentage,
+          billingDate,
+          paymentDeadline,
+          description: termin.description.trim(),
+          termOfPaymentDays: 0,
+          deletedAt: null,
+        };
+
+        if (termin.id) {
+          const previousTermin = existingProject.termins.find((item) => item.id === termin.id)!;
+
+          await tx.financeTermin.update({
+            where: { id: termin.id },
+            data: editableData,
+          });
+
+          if (previousTermin.billingDate?.getTime() !== billingDate?.getTime()) {
+            await tx.financeTerminAudit.create({
+              data: {
+                financeTerminId: termin.id,
+                userId: user.id,
+                action: previousTermin.billingDate ? 'BILLING_DATE_EDITED' : 'BILLING_DATE_SET',
+                metadata: {
+                  previousValue: previousTermin.billingDate?.toISOString() ?? null,
+                  newValue: billingDate?.toISOString() ?? null,
+                },
+              },
+            });
+          }
+
+          if (previousTermin.paymentDeadline?.getTime() !== paymentDeadline?.getTime()) {
+            await tx.financeTerminAudit.create({
+              data: {
+                financeTerminId: termin.id,
+                userId: user.id,
+                action: 'PAYMENT_DEADLINE_EDITED',
+                metadata: {
+                  previousValue: previousTermin.paymentDeadline?.toISOString() ?? null,
+                  newValue: paymentDeadline?.toISOString() ?? null,
+                },
+              },
+            });
+          }
+        } else {
+          await tx.financeTermin.create({
+            data: {
+              ...editableData,
+              financeProjectId: id,
+              termStatus: 'TO_INVOICE',
+              billingStatus: 'NOT_BILLABLE',
+              disbursementStatus: 'NOT_DISBURSED',
+            },
+          });
+        }
+      }
+
+      return tx.financeProject.findUnique({
+        where: { id },
         include: {
           createdBy: { select: { id: true, name: true } },
-          termins: { orderBy: { order: 'asc' } },
+          termins: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
         },
       });
     });
 
-    return NextResponse.json(toFinanceProjectResponse(project));
+    return NextResponse.json(toFinanceProjectResponse(project!));
   } catch (error) {
     console.error('[PATCH /api/finance-projects/[id]]', error);
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed to update finance project' }, { status: 400 });

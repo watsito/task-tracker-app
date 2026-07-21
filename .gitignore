@@ -42,3 +42,11 @@ next-env.d.ts
 
 /src/generated/prisma
 ~$*.docx
+
+# Claude Code local runtime
+/.claude/worktrees/
+/.claude/settings.local.json
+/.claude/scheduled_tasks.json
+
+# Dokumen lokal
+Docs/

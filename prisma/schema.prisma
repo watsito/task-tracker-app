@@ -39,6 +39,13 @@ enum FinanceProjectStatus {
   DONE
 }
 
+enum TermStatus {
+  TO_INVOICE
+  OPEN_INVOICE
+  OUTSTANDING
+  PAID
+}
+
 model User {
   id                  String           @id @default(cuid())
   name                String
@@ -52,6 +59,7 @@ model User {
   tasks               Task[]
   notifications       Notification[]
   auditLogs           AuditLog[]
+  financeTerminAudits FinanceTerminAudit[]
   createdLeadSources  LeadSource[]     @relation("LeadSourceCreatedBy")
   updatedLeadSources  LeadSource[]     @relation("LeadSourceUpdatedBy")
   createdLeadEntries  LeadEntry[]      @relation("LeadEntryCreatedBy")
@@ -192,22 +200,49 @@ model FinanceProject {
 }
 
 model FinanceTermin {
-  id               String         @id @default(cuid())
-  financeProjectId String
-  financeProject   FinanceProject @relation(fields: [financeProjectId], references: [id], onDelete: Cascade)
-  order            Int
-  name             String
-  percentage       Decimal        @db.Decimal(5, 2)
-  billingDate      DateTime?
-  description      String         @default("")
-  billingStatus    String         @default("NOT_BILLABLE")
-  disbursementStatus String       @default("NOT_DISBURSED")
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  id                 String         @id @default(cuid())
+  financeProjectId   String
+  financeProject     FinanceProject @relation(fields: [financeProjectId], references: [id], onDelete: Cascade)
+  order              Int
+  name               String
+  percentage         Decimal        @db.Decimal(5, 2)
+  billingDate        DateTime?
+  description        String         @default("")
+  billingStatus      String         @default("NOT_BILLABLE")
+  disbursementStatus String         @default("NOT_DISBURSED")
+  termStatus         TermStatus     @default(TO_INVOICE)
+  termOfPaymentDays  Int            @default(0)
+  paymentDeadline    DateTime?
+  deletedAt          DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  audits             FinanceTerminAudit[]
 
   @@index([financeProjectId])
   @@index([order])
+  @@index([termStatus])
+  @@index([paymentDeadline])
+  @@index([deletedAt])
   @@map("finance_termins")
+}
+
+model FinanceTerminAudit {
+  id               String   @id @default(cuid())
+  financeTerminId  String
+  financeTermin    FinanceTermin @relation(fields: [financeTerminId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action           String
+  fromStatus       TermStatus?
+  toStatus         TermStatus?
+  metadata         Json?
+  createdAt        DateTime @default(now())
+
+  @@index([financeTerminId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("finance_termin_audits")
 }
 
 model Notification {

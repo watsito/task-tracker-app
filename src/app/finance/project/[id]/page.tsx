@@ -5,22 +5,23 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import AuthGuard from '@/features/tasks/components/AuthGuard';
 import AppHeader from '@/features/tasks/components/AppHeader';
-import type { FinanceProjectRecord, FinanceProjectStatus } from '@/features/finance/types/finance';
+import type { FinanceProjectRecord, FinanceTerminStatus } from '@/features/finance/types/finance';
 
-const STATUS_META: Record<FinanceProjectStatus, { label: string; classes: string }> = {
-  PENDING: {
-    label: 'Pending',
-    classes: 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300',
-  },
-  IN_PROGRESS: {
-    label: 'In Progress',
-    classes: 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300',
-  },
-  DONE: {
-    label: 'Done',
-    classes: 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300',
-  },
+const TERMIN_STATUS_META: Record<FinanceTerminStatus, { label: string; classes: string }> = {
+  TO_INVOICE: { label: 'To Invoice', classes: 'border-slate-300 bg-white text-slate-600 dark:border-white/[0.08] dark:bg-slate-900/60 dark:text-slate-300' },
+  OPEN_INVOICE: { label: 'Open Invoice', classes: 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300' },
+  OUTSTANDING: { label: 'Outstanding', classes: 'border-red-300 bg-red-50 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300' },
+  PAID: { label: 'Paid', classes: 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300' },
 };
+
+const TERMIN_STATUS_ORDER: FinanceTerminStatus[] = ['OUTSTANDING', 'TO_INVOICE', 'OPEN_INVOICE', 'PAID'];
+
+function getTerminStatusCounts(project: FinanceProjectRecord) {
+  return TERMIN_STATUS_ORDER.map((status) => ({
+    status,
+    count: project.termins.filter((termin) => termin.termStatus === status).length,
+  })).filter((item) => item.count > 0);
+}
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('id-ID', {
@@ -107,9 +108,13 @@ function FinanceProjectDetailContent() {
                 {formatDate(project.dateStart)} - {formatDate(project.dateEnd)} · {formatCurrency(project.totalProject)} · {project.termins.length} termin
               </p>
             </div>
-            <span className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-semibold ${STATUS_META[project.status].classes}`}>
-              {STATUS_META[project.status].label}
-            </span>
+            <div className="flex max-w-md flex-wrap justify-end gap-1.5">
+              {getTerminStatusCounts(project).map(({ status, count }) => (
+                <span key={status} className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-semibold ${TERMIN_STATUS_META[status].classes}`}>
+                  {count} {TERMIN_STATUS_META[status].label}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -125,7 +130,6 @@ function FinanceProjectDetailContent() {
           <DetailItem label="Total Biaya Project" value={formatCurrency(project.totalProject)} />
           <DetailItem label="Tanggal Start" value={formatDate(project.dateStart)} />
           <DetailItem label="Tanggal End" value={formatDate(project.dateEnd)} />
-          <DetailItem label="Status" value={STATUS_META[project.status].label} />
           <DetailItem label="Catatan" value={project.notes || '-'} />
           <DetailItem label="Diinput Oleh" value={project.createdBy?.name ?? '-'} />
           <DetailItem label="Terakhir Diperbarui" value={new Date(project.updatedAt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} />
@@ -144,8 +148,7 @@ function FinanceProjectDetailContent() {
         <div className="space-y-4">
           {project.termins.map((termin, index) => {
             const terminValue = (project.totalProject * termin.percentage) / 100;
-            const billingReady = termin.billingStatus === 'BILLABLE';
-            const disbursed = termin.disbursementStatus === 'DISBURSED';
+            const terminStatus = TERMIN_STATUS_META[termin.termStatus];
 
             return (
               <article key={termin.id} className="rounded-2xl border border-gray-200 bg-gray-50 p-5 dark:border-white/[0.07] dark:bg-white/[0.03]">
@@ -154,21 +157,16 @@ function FinanceProjectDetailContent() {
                     <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-500 dark:text-indigo-400">Termin {index + 1}</p>
                     <h3 className="mt-1 text-base font-bold text-gray-900 dark:text-slate-100">{termin.name}</h3>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${billingReady ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300' : 'border-gray-300 bg-white text-gray-500 dark:border-white/[0.08] dark:bg-slate-900/60 dark:text-slate-400'}`}>
-                      {billingReady ? 'Sudah bisa ditagihkan' : 'Belum bisa ditagihkan'}
-                    </span>
-                    <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${disbursed ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300' : 'border-gray-300 bg-white text-gray-500 dark:border-white/[0.08] dark:bg-slate-900/60 dark:text-slate-400'}`}>
-                      {disbursed ? 'Sudah Cair' : 'Belum Cair'}
-                    </span>
-                  </div>
+                  <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${terminStatus.classes}`}>
+                    {terminStatus.label}
+                  </span>
                 </div>
 
                 <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                   <DetailItem label="Persentase" value={`${termin.percentage}%`} />
                   <DetailItem label="Nilai Termin" value={formatCurrency(terminValue)} />
-                  <DetailItem label="Tanggal Penagihan" value={formatDate(termin.billingDate)} />
-                  <DetailItem label="Urutan" value={String(termin.order)} />
+                  <DetailItem label="Billing Date" value={formatDate(termin.billingDate)} />
+                  <DetailItem label="Payment Deadline" value={formatDate(termin.paymentDeadline)} />
                 </div>
 
                 <div className="mt-3 rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-white/[0.06] dark:bg-slate-900/50">

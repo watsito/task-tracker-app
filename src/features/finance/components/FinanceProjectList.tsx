@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import type { FinanceProjectRecord, FinanceProjectStatus } from '../types/finance';
+import type { FinanceProjectRecord, FinanceTerminStatus } from '../types/finance';
 
 interface FinanceProjectListProps {
   projects: FinanceProjectRecord[];
@@ -9,11 +9,21 @@ interface FinanceProjectListProps {
   onDelete: (id: string) => void;
 }
 
-const STATUS_META: Record<FinanceProjectStatus, { label: string; classes: string }> = {
-  PENDING: { label: 'Pending', classes: 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300' },
-  IN_PROGRESS: { label: 'In Progress', classes: 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300' },
-  DONE: { label: 'Done', classes: 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300' },
+const TERMIN_STATUS_META: Record<FinanceTerminStatus, { label: string; classes: string }> = {
+  OUTSTANDING: { label: 'Outstanding', classes: 'border-red-300 bg-red-50 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300' },
+  TO_INVOICE: { label: 'To Invoice', classes: 'border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-500/20 dark:bg-slate-500/10 dark:text-slate-300' },
+  OPEN_INVOICE: { label: 'Open Invoice', classes: 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300' },
+  PAID: { label: 'Paid', classes: 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300' },
 };
+
+const TERMIN_STATUS_ORDER: FinanceTerminStatus[] = ['OUTSTANDING', 'TO_INVOICE', 'OPEN_INVOICE', 'PAID'];
+
+function getTerminStatusCounts(project: FinanceProjectRecord) {
+  return TERMIN_STATUS_ORDER.map((status) => ({
+    status,
+    count: project.termins.filter((termin) => termin.termStatus === status).length,
+  })).filter((item) => item.count > 0);
+}
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('id-ID', {
@@ -66,9 +76,14 @@ export default function FinanceProjectList({ projects, deletingId, onDelete }: F
                   <td className="px-4 py-4 text-sm text-gray-500 dark:text-slate-400">{formatDate(project.dateStart)} - {formatDate(project.dateEnd)}</td>
                   <td className="px-4 py-4 text-sm font-semibold text-gray-800 dark:text-slate-200">{formatCurrency(project.totalProject)}</td>
                   <td className="px-4 py-4">
-                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${STATUS_META[project.status].classes}`}>
-                      {STATUS_META[project.status].label}
-                    </span>
+                    <div className="flex min-w-[180px] flex-wrap gap-1.5">
+                      {getTerminStatusCounts(project).map(({ status, count }) => (
+                        <span key={status} className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${TERMIN_STATUS_META[status].classes}`}>
+                          {count} {TERMIN_STATUS_META[status].label}
+                        </span>
+                      ))}
+                      {project.termins.length === 0 && <span className="text-xs text-gray-400 dark:text-slate-500">-</span>}
+                    </div>
                   </td>
                   <td className="px-4 py-4 text-sm text-gray-600 dark:text-slate-400">{project.termins.length} termin</td>
                   <td className="px-4 py-4">

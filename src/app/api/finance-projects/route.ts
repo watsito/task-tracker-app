@@ -16,7 +16,7 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
       include: {
         createdBy: { select: { id: true, name: true } },
-        termins: { orderBy: { order: 'asc' } },
+        termins: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
       },
     });
 
@@ -54,15 +54,18 @@ export async function POST(request: Request) {
             name: termin.name.trim(),
             percentage: termin.percentage,
             billingDate: termin.billingDate ? new Date(termin.billingDate) : null,
+            paymentDeadline: termin.paymentDeadline ? new Date(termin.paymentDeadline) : null,
             description: termin.description.trim(),
-            billingStatus: termin.billingStatus,
-            disbursementStatus: termin.billingStatus === 'BILLABLE' ? termin.disbursementStatus : 'NOT_DISBURSED',
+            billingStatus: 'NOT_BILLABLE',
+            disbursementStatus: 'NOT_DISBURSED',
+            termStatus: 'TO_INVOICE' as const,
+            termOfPaymentDays: 0,
           })),
         },
       },
       include: {
         createdBy: { select: { id: true, name: true } },
-        termins: { orderBy: { order: 'asc' } },
+        termins: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
       },
     });
 

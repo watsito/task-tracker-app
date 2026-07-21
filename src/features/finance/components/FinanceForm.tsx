@@ -4,16 +4,15 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import FinanceProjectList from './FinanceProjectList';
-import type { FinanceProjectInput, FinanceProjectRecord, FinanceProjectStatus, FinanceTerminInput } from '../types/finance';
+import type { FinanceProjectInput, FinanceProjectRecord, FinanceTerminInput } from '../types/finance';
 
 const EMPTY_TERMIN = (order: number): FinanceTerminInput => ({
   order,
   name: `Termin ${order}`,
   percentage: 0,
   billingDate: null,
+  paymentDeadline: null,
   description: '',
-  billingStatus: 'NOT_BILLABLE',
-  disbursementStatus: 'NOT_DISBURSED',
 });
 
 const EMPTY_FORM: FinanceProjectInput = {
@@ -26,12 +25,6 @@ const EMPTY_FORM: FinanceProjectInput = {
   notes: '',
   termins: [EMPTY_TERMIN(1)],
 };
-
-const STATUS_OPTIONS: Array<{ value: FinanceProjectStatus; label: string }> = [
-  { value: 'PENDING', label: 'Pending' },
-  { value: 'IN_PROGRESS', label: 'In Progress' },
-  { value: 'DONE', label: 'Done' },
-];
 
 function normalizeRecordToInput(record: FinanceProjectRecord): FinanceProjectInput {
   return {
@@ -48,9 +41,8 @@ function normalizeRecordToInput(record: FinanceProjectRecord): FinanceProjectInp
       name: termin.name,
       percentage: termin.percentage,
       billingDate: termin.billingDate ? termin.billingDate.slice(0, 10) : null,
+      paymentDeadline: termin.paymentDeadline ? termin.paymentDeadline.slice(0, 10) : null,
       description: termin.description,
-      billingStatus: termin.billingStatus,
-      disbursementStatus: termin.disbursementStatus,
     })),
   };
 }
@@ -279,12 +271,16 @@ export default function FinanceForm() {
                   <input type="number" min="0" value={form.totalProject || ''} onChange={(e) => updateField('totalProject', Number(e.target.value) || 0)} className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm text-gray-900 outline-none dark:text-slate-100" placeholder="0" />
                 </div>
               </Field>
-              <Field label="Status">
-                <select value={form.status} onChange={(e) => updateField('status', e.target.value as FinanceProjectStatus)} className="input">
-                  {STATUS_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
+              <Field label="Status Awal Termin">
+                <div className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-3 dark:border-white/[0.08] dark:bg-white/[0.03]">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-slate-500" />
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">To Invoice</span>
+                  </div>
+                  <p className="mt-1.5 text-[10px] leading-relaxed text-slate-500 dark:text-slate-500">
+                    Berlaku untuk termin baru. Status berikutnya diubah melalui Kanban.
+                  </p>
+                </div>
               </Field>
               <Field label="Catatan / Keterangan">
                 <textarea value={form.notes} onChange={(e) => updateField('notes', e.target.value)} rows={3} className="input min-h-[88px] resize-none" placeholder="Catatan tambahan project finance" />
@@ -301,8 +297,8 @@ export default function FinanceForm() {
                   <span className="font-semibold text-gray-800 dark:text-slate-200">{formatCurrency(form.totalProject)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Status</span>
-                  <span className="font-semibold text-gray-800 dark:text-slate-200">{STATUS_OPTIONS.find((option) => option.value === form.status)?.label}</span>
+                  <span>Status Awal Termin</span>
+                  <span className="font-semibold text-gray-800 dark:text-slate-200">To Invoice</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Jumlah Termin</span>
@@ -340,14 +336,14 @@ export default function FinanceForm() {
                     <div className="mb-4 flex items-center justify-between gap-3">
                       <div>
                         <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Termin {index + 1}</h3>
-                        <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-500">Atur persentase, tanggal penagihan, dan syarat pencairan.</p>
+                        <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-500">Atur persentase, billing date, payment deadline, dan keterangan termin.</p>
                       </div>
                       <button type="button" onClick={() => removeTermin(index)} className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20">
                         Hapus
                       </button>
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                       <Field label="Nama Termin" required>
                         <input value={termin.name} onChange={(e) => updateTermin(index, 'name', e.target.value)} className="input" placeholder={`Termin ${index + 1}`} />
                       </Field>
@@ -356,6 +352,9 @@ export default function FinanceForm() {
                       </Field>
                       <Field label="Tanggal Penagihan">
                         <input type="date" value={termin.billingDate ?? ''} onChange={(e) => updateTermin(index, 'billingDate', e.target.value || null)} className="input" />
+                      </Field>
+                      <Field label="Payment Deadline">
+                        <input type="date" value={termin.paymentDeadline ?? ''} onChange={(e) => updateTermin(index, 'paymentDeadline', e.target.value || null)} className="input" />
                       </Field>
                       <Field label="Nilai Termin">
                         <div className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-slate-200">
@@ -368,47 +367,6 @@ export default function FinanceForm() {
                       <textarea value={termin.description} onChange={(e) => updateTermin(index, 'description', e.target.value)} rows={3} className="input min-h-[88px] resize-none" placeholder="Contoh: setelah approval invoice dan BAST" />
                     </Field>
 
-                    <div className="mt-4 grid gap-3 rounded-2xl border border-gray-200 bg-white p-4 sm:grid-cols-2 dark:border-white/[0.07] dark:bg-white/[0.03]">
-                      <Field label="Status Penagihan">
-                        <select
-                          value={termin.billingStatus}
-                          onChange={(e) => {
-                            const billingStatus = e.target.value as FinanceTerminInput['billingStatus'];
-                            setForm((prev) => ({
-                              ...prev,
-                              termins: prev.termins.map((item, itemIndex) =>
-                                itemIndex === index
-                                  ? {
-                                      ...item,
-                                      billingStatus,
-                                      disbursementStatus: billingStatus === 'BILLABLE' ? item.disbursementStatus : 'NOT_DISBURSED',
-                                    }
-                                  : item
-                              ),
-                            }));
-                          }}
-                          className="input"
-                        >
-                          <option value="NOT_BILLABLE">Belum bisa ditagihkan</option>
-                          <option value="BILLABLE">Sudah bisa ditagihkan</option>
-                        </select>
-                      </Field>
-
-                      <Field label="Status Pencairan">
-                        <select
-                          value={termin.disbursementStatus}
-                          onChange={(e) => updateTermin(index, 'disbursementStatus', e.target.value as FinanceTerminInput['disbursementStatus'])}
-                          disabled={termin.billingStatus !== 'BILLABLE'}
-                          className="input disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400 dark:disabled:border-white/[0.05] dark:disabled:bg-white/[0.02] dark:disabled:text-slate-600"
-                        >
-                          <option value="NOT_DISBURSED">Belum Cair</option>
-                          <option value="DISBURSED">Sudah Cair</option>
-                        </select>
-                        {termin.billingStatus !== 'BILLABLE' && (
-                          <p className="mt-1.5 text-[10px] text-gray-400 dark:text-slate-500">Aktif setelah status penagihan sudah bisa ditagihkan.</p>
-                        )}
-                      </Field>
-                    </div>
                   </div>
                 );
               })}

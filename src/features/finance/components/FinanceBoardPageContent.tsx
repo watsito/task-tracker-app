@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import FinanceDashboard from './FinanceDashboard';
+import FinanceTrackingBoard from './FinanceTrackingBoard';
+import type { FinanceTrackingFilters } from './FinanceTrackingBoard';
 import type { FinanceDashboardSummary, FinanceProjectRecord, FinanceProjectStatus } from '../types/finance';
 
 type TabKey = 'dashboard' | 'tracking';
@@ -11,47 +13,18 @@ const TABS: Array<{ key: TabKey; label: string; icon: string }> = [
   { key: 'tracking', label: 'Tracking', icon: '📋' },
 ];
 
-const STATUS_META: Record<FinanceProjectStatus, { label: string; color: string; bgColor: string }> = {
-  PENDING: { label: 'Pending', color: 'text-amber-700 dark:text-amber-300', bgColor: 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20' },
-  IN_PROGRESS: { label: 'In Progress', color: 'text-blue-700 dark:text-blue-300', bgColor: 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20' },
-  DONE: { label: 'Done', color: 'text-emerald-700 dark:text-emerald-300', bgColor: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20' },
+const EMPTY_FILTERS: FinanceTrackingFilters = {
+  search: '',
+  overdueOnly: false,
+  deadline: 'ALL',
+  projectId: '',
+  amount: 'ALL',
 };
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-type TerminWithProject = FinanceProjectRecord['termins'][number] & {
-  projectId: string;
-  projectName: string;
-  totalValue: number;
-};
-
-function groupTerminsByProject(termins: TerminWithProject[]) {
-  const grouped = new Map<string, { projectId: string; projectName: string; count: number; totalValue: number }>();
-
-  for (const termin of termins) {
-    const existing = grouped.get(termin.projectName);
-    grouped.set(termin.projectName, {
-      projectId: termin.projectId,
-      projectName: termin.projectName,
-      count: (existing?.count ?? 0) + 1,
-      totalValue: (existing?.totalValue ?? 0) + termin.totalValue,
-    });
-  }
-
-  return Array.from(grouped.values()).sort((a, b) =>
-    a.projectName.localeCompare(b.projectName, 'id', { sensitivity: 'base' })
-  );
-}
 
 export default function FinanceBoardPageContent() {
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
   const [projects, setProjects] = useState<FinanceProjectRecord[]>([]);
+  const [filters, setFilters] = useState<FinanceTrackingFilters>(EMPTY_FILTERS);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -82,14 +55,6 @@ export default function FinanceBoardPageContent() {
       0
     );
     const statuses: FinanceProjectStatus[] = ['PENDING', 'IN_PROGRESS', 'DONE'];
-    const allTermins = projects.flatMap((project) =>
-      project.termins.map((termin) => ({
-        ...termin,
-        projectId: project.id,
-        projectName: project.projectName,
-        totalValue: (project.totalProject * termin.percentage) / 100,
-      }))
-    );
 
     return {
       totalProjects,
@@ -101,143 +66,142 @@ export default function FinanceBoardPageContent() {
         count: projects.filter((project) => project.status === status).length,
         totalValue: projects.filter((project) => project.status === status).reduce((total, project) => total + project.totalProject, 0),
       })),
-      terminBillingSummary: [
-        {
-          status: 'NOT_BILLABLE',
-          label: 'Belum bisa ditagihkan',
-          count: allTermins.filter((termin) => termin.billingStatus === 'NOT_BILLABLE').length,
-          totalValue: allTermins.filter((termin) => termin.billingStatus === 'NOT_BILLABLE').reduce((total, termin) => total + termin.totalValue, 0),
-          terminDetails: groupTerminsByProject(allTermins.filter((termin) => termin.billingStatus === 'NOT_BILLABLE')),
-        },
-        {
-          status: 'BILLABLE',
-          label: 'Sudah bisa ditagihkan',
-          count: allTermins.filter((termin) => termin.billingStatus === 'BILLABLE').length,
-          totalValue: allTermins.filter((termin) => termin.billingStatus === 'BILLABLE').reduce((total, termin) => total + termin.totalValue, 0),
-          terminDetails: groupTerminsByProject(allTermins.filter((termin) => termin.billingStatus === 'BILLABLE')),
-        },
-      ],
-      terminDisbursementSummary: [
-        {
-          status: 'NOT_DISBURSED',
-          label: 'Belum Cair',
-          count: allTermins.filter((termin) => termin.disbursementStatus === 'NOT_DISBURSED').length,
-          totalValue: allTermins.filter((termin) => termin.disbursementStatus === 'NOT_DISBURSED').reduce((total, termin) => total + termin.totalValue, 0),
-          terminDetails: groupTerminsByProject(allTermins.filter((termin) => termin.disbursementStatus === 'NOT_DISBURSED')),
-        },
-        {
-          status: 'DISBURSED',
-          label: 'Sudah Cair',
-          count: allTermins.filter((termin) => termin.disbursementStatus === 'DISBURSED').length,
-          totalValue: allTermins.filter((termin) => termin.disbursementStatus === 'DISBURSED').reduce((total, termin) => total + termin.totalValue, 0),
-          terminDetails: groupTerminsByProject(allTermins.filter((termin) => termin.disbursementStatus === 'DISBURSED')),
-        },
-      ],
     };
   }, [projects]);
 
-  const projectsByStatus = useMemo(() => {
-    const grouped: Record<FinanceProjectStatus, FinanceProjectRecord[]> = {
-      PENDING: [],
-      IN_PROGRESS: [],
-      DONE: [],
-    };
-    for (const project of projects) {
-      grouped[project.status].push(project);
-    }
-    return grouped;
-  }, [projects]);
+  const handleTerminStatusChange = useCallback((projectId: string, updatedProject: FinanceProjectRecord) => {
+    setProjects((prev) => prev.map((p) => (p.id === projectId ? updatedProject : p)));
+  }, []);
 
   return (
-    <div className="flex flex-col gap-6 p-5 md:p-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-slate-100">Board Finance</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-slate-500">Kelola dan pantau project finance.</p>
+    <div className={`flex min-h-0 flex-1 flex-col ${activeTab === 'tracking' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+      <div className="flex shrink-0 flex-col gap-6 p-5 md:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-slate-100">Board Finance</h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-slate-500">Kelola dan pantau project finance.</p>
+          </div>
         </div>
-      </div>
 
-      <div className="inline-flex w-fit rounded-2xl border border-gray-200 bg-white p-1 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
-        {TABS.map((tab) => {
-          const active = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-200'}`}
-            >
-              <span>{tab.icon}</span>
-              {tab.label}
-            </button>
-          );
-        })}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex w-fit rounded-2xl border border-gray-200 bg-white p-1 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+            {TABS.map((tab) => {
+              const active = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(tab.key);
+                    if (tab.key === 'dashboard') setFilters(EMPTY_FILTERS);
+                  }}
+                  className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-200'}`}
+                >
+                  <span>{tab.icon}</span>
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {activeTab === 'tracking' && (
+            <FinanceTrackingFilterBar projects={projects} filters={filters} onChange={setFilters} />
+          )}
+        </div>
       </div>
 
       {isLoading ? (
-        <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-500 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80 dark:text-slate-500">
+        <div className="m-5 md:m-8 rounded-2xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-500 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80 dark:text-slate-500">
           Memuat data finance...
         </div>
       ) : projects.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+        <div className="m-5 md:m-8 rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
           <p className="text-base font-semibold text-gray-800 dark:text-slate-200">Belum ada data finance</p>
           <p className="mt-2 text-sm text-gray-500 dark:text-slate-500">Mulai dengan membuka halaman Form untuk input project finance pertama.</p>
         </div>
       ) : activeTab === 'dashboard' ? (
-        <FinanceDashboard summary={summary} />
+        <div className="flex-1 p-5 md:p-8">
+          <FinanceDashboard summary={summary} />
+        </div>
       ) : (
-        <TrackingView projectsByStatus={projectsByStatus} />
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 pb-5 pt-1 md:px-8 md:pb-8">
+          <FinanceTrackingBoard projects={projects} filters={filters} onStatusChange={handleTerminStatusChange} />
+        </div>
       )}
     </div>
   );
 }
 
-function TrackingView({ projectsByStatus }: { projectsByStatus: Record<FinanceProjectStatus, FinanceProjectRecord[]> }) {
-  const statuses: FinanceProjectStatus[] = ['PENDING', 'IN_PROGRESS', 'DONE'];
+function FinanceTrackingFilterBar({
+  projects,
+  filters,
+  onChange,
+}: {
+  projects: FinanceProjectRecord[];
+  filters: FinanceTrackingFilters;
+  onChange: React.Dispatch<React.SetStateAction<FinanceTrackingFilters>>;
+}) {
+  const activeFilterCount = [
+    filters.search,
+    filters.overdueOnly,
+    filters.deadline !== 'ALL',
+    filters.projectId,
+    filters.amount !== 'ALL',
+  ].filter(Boolean).length;
+
+  const updateFilter = <K extends keyof FinanceTrackingFilters>(key: K, value: FinanceTrackingFilters[K]) => {
+    onChange((prev) => ({ ...prev, [key]: value }));
+  };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      {statuses.map((status) => {
-        const meta = STATUS_META[status];
-        const statusProjects = projectsByStatus[status];
+    <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
+      <label className="relative min-w-[180px] flex-1 sm:flex-none">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">⌕</span>
+        <input
+          type="search"
+          value={filters.search}
+          onChange={(e) => updateFilter('search', e.target.value)}
+          placeholder="Cari proyek / klien"
+          className="h-10 w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 text-xs text-gray-800 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10 dark:border-white/[0.08] dark:bg-slate-900/80 dark:text-slate-200"
+        />
+      </label>
 
-        return (
-          <section key={status} className="flex flex-col gap-4">
-            <div className={`flex items-center justify-between rounded-2xl border px-4 py-3 ${meta.bgColor}`}>
-              <span className={`text-sm font-bold ${meta.color}`}>{meta.label}</span>
-              <span className={`flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 text-xs font-bold ${meta.color} bg-white/60 dark:bg-black/20`}>
-                {statusProjects.length}
-              </span>
-            </div>
+      <button
+        type="button"
+        onClick={() => updateFilter('overdueOnly', !filters.overdueOnly)}
+        className={`h-10 rounded-xl border px-3 text-xs font-semibold transition ${filters.overdueOnly ? 'border-red-300 bg-red-50 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300' : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 dark:border-white/[0.08] dark:bg-slate-900/80 dark:text-slate-400'}`}
+      >
+        Overdue
+      </button>
 
-            <div className="flex flex-col gap-3">
-              {statusProjects.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-6 text-center text-xs text-gray-400 dark:border-white/[0.06] dark:bg-slate-900/60 dark:text-slate-500">
-                  Tidak ada project
-                </div>
-              ) : (
-                statusProjects.map((project) => (
-                  <div key={project.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-white/[0.07] dark:bg-slate-800/60 dark:hover:border-white/[0.14]">
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">{project.projectName}</h3>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">{project.clientName}</p>
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-800 dark:text-slate-200">{formatCurrency(project.totalProject)}</span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600 dark:bg-white/[0.04] dark:text-slate-400">
-                        {project.termins.length} termin
-                      </span>
-                    </div>
-                    {project.dateStart && project.dateEnd && (
-                      <p className="mt-2 text-[11px] text-gray-400 dark:text-slate-500">
-                        {new Date(project.dateStart).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} - {new Date(project.dateEnd).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </p>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-        );
-      })}
+      <select value={filters.deadline} onChange={(e) => updateFilter('deadline', e.target.value as FinanceTrackingFilters['deadline'])} className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-600 outline-none dark:border-white/[0.08] dark:bg-slate-900/80 dark:text-slate-300">
+        <option value="ALL">Semua Deadline</option>
+        <option value="TODAY">Hari Ini</option>
+        <option value="NEXT_7_DAYS">7 Hari Ke Depan</option>
+        <option value="THIS_MONTH">Bulan Ini</option>
+        <option value="OVERDUE">Terlambat</option>
+      </select>
+
+      <select value={filters.projectId} onChange={(e) => updateFilter('projectId', e.target.value)} className="h-10 max-w-[190px] rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-600 outline-none dark:border-white/[0.08] dark:bg-slate-900/80 dark:text-slate-300">
+        <option value="">Semua Proyek</option>
+        {[...projects].sort((a, b) => a.projectName.localeCompare(b.projectName, 'id')).map((project) => (
+          <option key={project.id} value={project.id}>{project.projectName}</option>
+        ))}
+      </select>
+
+      <select value={filters.amount} onChange={(e) => updateFilter('amount', e.target.value as FinanceTrackingFilters['amount'])} className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-600 outline-none dark:border-white/[0.08] dark:bg-slate-900/80 dark:text-slate-300">
+        <option value="ALL">Semua Nilai</option>
+        <option value="UNDER_50M">&lt; Rp50 jt</option>
+        <option value="50M_TO_100M">Rp50–100 jt</option>
+        <option value="100M_TO_250M">Rp100–250 jt</option>
+        <option value="OVER_250M">&gt; Rp250 jt</option>
+      </select>
+
+      {activeFilterCount > 0 && (
+        <button type="button" onClick={() => onChange(EMPTY_FILTERS)} className="h-10 rounded-xl border border-gray-200 bg-gray-50 px-3 text-xs font-semibold text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-slate-400">
+          Reset ({activeFilterCount})
+        </button>
+      )}
     </div>
   );
 }

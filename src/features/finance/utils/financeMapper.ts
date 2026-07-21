@@ -1,5 +1,5 @@
 import { Prisma } from '@/generated/prisma/client';
-import type { FinanceProjectInput, FinanceProjectRecord } from '@/features/finance/types/finance';
+import type { FinanceProjectInput, FinanceProjectRecord, FinanceTerminStatus } from '@/features/finance/types/finance';
 
 export function validateFinanceProjectInput(input: FinanceProjectInput) {
   if (!input.clientName.trim()) {
@@ -21,6 +21,13 @@ export function validateFinanceProjectInput(input: FinanceProjectInput) {
   const invalidTermin = input.termins.find((termin) => !termin.name.trim());
   if (invalidTermin) {
     throw new Error('Setiap termin harus memiliki nama.');
+  }
+
+  const invalidDateRange = input.termins.find((termin) =>
+    termin.billingDate && termin.paymentDeadline && new Date(termin.paymentDeadline) < new Date(termin.billingDate)
+  );
+  if (invalidDateRange) {
+    throw new Error('Payment Deadline tidak boleh lebih awal dari Billing Date.');
   }
 
   const totalPercentage = input.termins.reduce((total, termin) => total + termin.percentage, 0);
@@ -48,8 +55,8 @@ export function toFinanceProjectResponse(project: {
     percentage: Prisma.Decimal;
     billingDate: Date | null;
     description: string;
-    billingStatus: string;
-    disbursementStatus: string;
+    termStatus: string;
+    paymentDeadline: Date | null;
     createdAt: Date;
     updatedAt: Date;
   }>;
@@ -73,8 +80,8 @@ export function toFinanceProjectResponse(project: {
       percentage: Number(termin.percentage),
       billingDate: termin.billingDate?.toISOString() ?? null,
       description: termin.description,
-      billingStatus: termin.billingStatus === 'BILLABLE' ? 'BILLABLE' : 'NOT_BILLABLE',
-      disbursementStatus: termin.disbursementStatus === 'DISBURSED' ? 'DISBURSED' : 'NOT_DISBURSED',
+      termStatus: (termin.termStatus as FinanceTerminStatus) ?? 'TO_INVOICE',
+      paymentDeadline: termin.paymentDeadline?.toISOString() ?? null,
       createdAt: termin.createdAt.toISOString(),
       updatedAt: termin.updatedAt.toISOString(),
     })),
