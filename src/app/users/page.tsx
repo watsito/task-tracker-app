@@ -321,7 +321,7 @@ export function UserManagement() {
       </div>
 
       {userToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+        <div data-motion="modal-backdrop" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-950 p-6 shadow-2xl shadow-black/60">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-400">
               <TrashIcon />
@@ -354,7 +354,7 @@ export function UserManagement() {
 
       {/* ─── Permissions Modal ─── */}
       {userToEditPerms && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+        <div data-motion="modal-backdrop" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
           <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 bg-slate-950 shadow-2xl shadow-black/60">
             {/* Header */}
             <div className="sticky top-0 z-10 border-b border-white/[0.06] bg-slate-950/95 px-6 py-5 backdrop-blur-md">

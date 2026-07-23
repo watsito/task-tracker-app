@@ -494,7 +494,7 @@ function DateEditorModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div data-motion="modal-backdrop" className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-slate-900">
         <div className="flex items-start justify-between gap-3">
           <div>

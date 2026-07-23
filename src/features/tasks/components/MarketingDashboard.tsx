@@ -49,7 +49,7 @@ const CHANNEL_ICONS: Record<string, string> = {
 
 const CHANNEL_ORDER = ['email', 'googleAds', 'metaAds', 'tender', 'socialMedia', 'linkedin', 'referral', 'inboundWa', 'web', 'ka', 'mes', 'community', 'other'];
 
-export default function MarketingDashboard() {
+export default function MarketingDashboard({ readOnly = false }: { readOnly?: boolean }) {
   const [entries, setEntries] = useState<LeadSourceEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -238,15 +238,17 @@ export default function MarketingDashboard() {
           <p className="text-xs font-bold uppercase tracking-[0.32em] text-indigo-500 dark:text-indigo-300">Marketing Dashboard</p>
           <h1 className="mt-1 text-xl font-black tracking-tight text-gray-900 dark:text-white">Ringkasan Data Form</h1>
         </div>
-        <Link href="/lead-sources" className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-500">
-          Input Data
-        </Link>
+        {!readOnly && (
+          <Link href="/lead-sources" className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-500">
+            Input Data
+          </Link>
+        )}
       </div>
 
       {/* Stat Cards — Ringkasan Utama */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {/* Total Entri */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+        <div data-motion="card" className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
           <div className="flex items-center gap-2">
             <span className="text-lg">📋</span>
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-500">Total Entri</p>
@@ -256,7 +258,7 @@ export default function MarketingDashboard() {
         </div>
 
         {/* Total Leads + Growth */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+        <div data-motion="card" className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-lg">👥</span>
@@ -273,7 +275,7 @@ export default function MarketingDashboard() {
         </div>
 
         {/* Top Channel */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+        <div data-motion="card" className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
           <div className="flex items-center gap-2">
             <span className="text-lg">🏆</span>
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-500">Top Channel</p>
@@ -289,7 +291,7 @@ export default function MarketingDashboard() {
         </div>
 
         {/* Periode Terakhir */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+        <div data-motion="card" className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
           <div className="flex items-center gap-2">
             <span className="text-lg">📅</span>
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-500">Periode Terakhir</p>
@@ -301,7 +303,7 @@ export default function MarketingDashboard() {
 
       {/* Detail Data Periode */}
       {entries.length > 0 && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+        <div data-motion="card" className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Detail Input</h3>
@@ -376,7 +378,7 @@ export default function MarketingDashboard() {
             {chartLabels.length > 0 ? <Line data={lineChartData} options={lineChartOptions} /> : <div className="flex h-full items-center justify-center"><p className="text-sm text-gray-400 dark:text-slate-500">Belum ada data.</p></div>}
           </div>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+        <div data-motion="card" className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
           <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Distribusi per Tim</h3>
           <div className="mt-4 h-56">
             {teamLabels.length > 0 ? (
@@ -390,7 +392,7 @@ export default function MarketingDashboard() {
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Perbandingan Periode */}
         {latest && previous && (
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+          <div data-motion="card" className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
             <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Perbandingan Periode</h3>
             <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">Periode terakhir vs sebelumnya</p>
             <div className="mt-4 space-y-3">
@@ -418,7 +420,7 @@ export default function MarketingDashboard() {
         )}
 
         {/* Channel Ranking */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+        <div data-motion="card" className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
           <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Ranking Channel</h3>
           <p className="mt-1 text-xs text-gray-500 dark:text-slate-500">Top & bottom performers</p>
           <div className="mt-4 space-y-4">
@@ -454,7 +456,7 @@ export default function MarketingDashboard() {
 
       {/* Semua Entri */}
       {entries.length > 0 && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
+        <div data-motion="card" className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-slate-900/80">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Semua Data Form</h3>
             {totalPages > 1 && (

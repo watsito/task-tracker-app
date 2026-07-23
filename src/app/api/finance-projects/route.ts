@@ -36,7 +36,15 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json() as FinanceProjectInput;
-    validateFinanceProjectInput(body);
+
+    try {
+      validateFinanceProjectInput(body);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Data project tidak valid.' },
+        { status: 400 }
+      );
+    }
 
     const project = await prisma.financeProject.create({
       data: {
@@ -72,6 +80,6 @@ export async function POST(request: Request) {
     return NextResponse.json(toFinanceProjectResponse(project), { status: 201 });
   } catch (error) {
     console.error('[POST /api/finance-projects]', error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed to create finance project' }, { status: 400 });
+    return NextResponse.json({ error: 'Gagal menyimpan project karena terjadi gangguan pada server.' }, { status: 500 });
   }
 }

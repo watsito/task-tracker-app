@@ -54,7 +54,7 @@ export default function LoginPage() {
           </div>
 
           <div className="max-w-md pb-12">
-            <p className="motion-slide-right motion-delay-2 text-[clamp(2.75rem,4.6vw,4.8rem)] font-semibold leading-[0.94] tracking-[-0.055em] text-stone-900 dark:text-stone-100">
+            <p className="motion-slide-right motion-delay-2 text-[clamp(2.75rem,4.6vw,4.8rem)] font-semibold leading-[0.95] tracking-[-0.055em] text-stone-900 dark:text-stone-100">
               Kerja yang jelas. Tim yang selaras.
             </p>
             <p className="motion-slide-right motion-delay-3 mt-8 max-w-sm text-base leading-7 text-stone-600 dark:text-stone-400">

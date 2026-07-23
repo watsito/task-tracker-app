@@ -169,7 +169,7 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div data-motion="modal-backdrop" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 dark:shadow-black/50">
         <h2 className="mb-5 text-base font-semibold text-gray-900 dark:text-slate-100">{editTask ? 'Edit Task' : 'New Task'}</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -387,7 +387,7 @@ export default function LocalBoard({ readOnly = false }: LocalBoardProps) {
 
       <DndContext sensors={readOnly ? [] : sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
         <div className="min-h-0 flex-1 overflow-hidden">
-          <div className="grid h-full min-h-0 grid-cols-1 gap-4 pb-4 xl:grid-cols-4">
+          <div data-motion="board" className="grid h-full min-h-0 grid-cols-1 gap-4 pb-4 xl:grid-cols-4">
             {COLUMNS.map((col) => {
               const colTasks = activeTasks.filter((t) => t.status === col.status);
               const isActiveMobile = activeTab === col.status;
@@ -421,7 +421,7 @@ function DroppableColumn({ col, colTasks, isActiveMobile, isAdmin, readOnly = fa
   const { setNodeRef, isOver } = useDroppable({ id: col.status, disabled: readOnly });
 
   return (
-    <section ref={setNodeRef} id={`column-${col.status.toLowerCase().replace(/\s+/g, '-')}`} className={`h-full min-h-0 flex-col overflow-hidden rounded-2xl border transition-all duration-300 ${isOver ? 'border-indigo-400 bg-indigo-50 dark:border-indigo-400 dark:bg-slate-800/80' : `${col.borderColor} bg-white dark:bg-slate-900/60`} shadow-lg ${col.glowColor} ${isActiveMobile ? 'flex' : 'hidden xl:flex'}`}>
+    <section ref={setNodeRef} data-motion="board-column" id={`column-${col.status.toLowerCase().replace(/\s+/g, '-')}`} className={`h-full min-h-0 flex-col overflow-hidden rounded-2xl border transition-all duration-300 ${isOver ? 'border-indigo-400 bg-indigo-50 dark:border-indigo-400 dark:bg-slate-800/80' : `${col.borderColor} bg-white dark:bg-slate-900/60`} shadow-lg ${col.glowColor} ${isActiveMobile ? 'flex' : 'hidden xl:flex'}`}>
       <div className={`flex shrink-0 items-center justify-between rounded-t-2xl bg-gradient-to-r ${col.accentFrom} ${col.accentTo} px-4 py-3`}>
         <span className="text-sm font-semibold text-white drop-shadow">{col.label}</span>
         <span className={`flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${col.badgeBg} ${col.badgeText}`}>{colTasks.length}</span>

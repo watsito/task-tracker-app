@@ -59,7 +59,7 @@ export default function ManagementDashboard() {
         {view === 'tasks' ? (
           <TaskBoard readOnly />
         ) : view === 'marketing' ? (
-          <MarketingDashboard />
+          <MarketingDashboard readOnly />
         ) : (
           <FinanceBoardPageContent readOnly />
         )}

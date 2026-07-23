@@ -63,6 +63,7 @@ export default function FinanceForm() {
   const [loadingEntries, setLoadingEntries] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
@@ -123,6 +124,7 @@ export default function FinanceForm() {
   );
 
   const updateField = <K extends keyof FinanceProjectInput>(key: K, value: FinanceProjectInput[K]) => {
+    setFormError(null);
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -158,6 +160,7 @@ export default function FinanceForm() {
   };
 
   const resetForm = () => {
+    setFormError(null);
     setForm(EMPTY_FORM);
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
@@ -189,6 +192,30 @@ export default function FinanceForm() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setFormError(null);
+
+    const validationError = !form.clientName.trim()
+      ? 'Nama klien wajib diisi.'
+      : !form.projectName.trim()
+        ? 'Nama project wajib diisi.'
+        : !Number.isFinite(form.totalProject) || form.totalProject <= 0
+          ? 'Total project harus lebih dari 0.'
+          : form.termins.length === 0
+            ? 'Minimal harus ada 1 termin.'
+            : form.termins.some((termin) => !termin.name.trim())
+              ? 'Setiap termin harus memiliki nama.'
+              : form.termins.some((termin) => termin.billingDate && termin.paymentDeadline && new Date(termin.paymentDeadline) < new Date(termin.billingDate))
+                ? 'Payment Deadline tidak boleh lebih awal dari Billing Date.'
+                : Math.abs(totalTerminPercentage - 100) > 0.01
+                  ? 'Total persentase termin harus tepat 100%.'
+                  : null;
+
+    if (validationError) {
+      setFormError(validationError);
+      showToast(validationError, 'error');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -215,7 +242,11 @@ export default function FinanceForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        showToast(data.error ?? 'Gagal menyimpan project finance.', 'error');
+        const message = response.status >= 500
+          ? 'Terjadi gangguan pada server. Silakan coba lagi atau hubungi administrator.'
+          : data.error ?? 'Data belum valid. Periksa kembali isian form.';
+        setFormError(message);
+        showToast(message, 'error');
         return;
       }
 
@@ -252,10 +283,10 @@ export default function FinanceForm() {
             <h2 className="text-sm font-bold text-gray-900 dark:text-slate-100">Project Info</h2>
             <div className="mt-5 flex flex-col gap-4">
               <Field label="Nama Klien" required>
-                <input value={form.clientName} onChange={(e) => updateField('clientName', e.target.value)} className="input" placeholder="PT. Klien" />
+                <input required value={form.clientName} onChange={(e) => updateField('clientName', e.target.value)} className="input" placeholder="PT. Klien" />
               </Field>
               <Field label="Nama Project" required>
-                <input value={form.projectName} onChange={(e) => updateField('projectName', e.target.value)} className="input" placeholder="Nama project finance" />
+                <input required value={form.projectName} onChange={(e) => updateField('projectName', e.target.value)} className="input" placeholder="Nama project finance" />
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Tanggal Start">
@@ -377,6 +408,12 @@ export default function FinanceForm() {
               <SummaryCard label="Total Nilai Termin" value={formatCurrency(totalTerminAmount)} tone="info" />
               <SummaryCard label="Sisa Persentase" value={`${(100 - totalTerminPercentage).toFixed(2)}%`} tone={Math.abs(totalTerminPercentage - 100) <= 0.01 ? 'success' : 'warning'} />
             </div>
+
+            {formError && (
+              <div role="alert" className="mt-5 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-500/20 dark:bg-red-500/15 dark:text-red-300">
+                {formError}
+              </div>
+            )}
 
             <div className="mt-5 flex gap-2">
               <button type="submit" disabled={isSubmitting} className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60">

@@ -99,7 +99,7 @@ export default function AppHeader() {
               <span className="bg-white" />
             </div>
             <span className="hidden text-sm font-bold tracking-[-0.02em] text-stone-900 sm:block dark:text-stone-100">
-              Product Development
+              Product dev &amp; Management
             </span>
           </Link>
 
