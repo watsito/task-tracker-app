@@ -188,6 +188,7 @@ interface TrackingBoardProps {
   projects: FinanceProjectRecord[];
   filters: FinanceTrackingFilters;
   onStatusChange: (projectId: string, updatedProject: FinanceProjectRecord) => void;
+  readOnly?: boolean;
 }
 
 function useAuditHistory(terminId: string | null) {
@@ -261,12 +262,12 @@ function AuditHistoryPanel({ audits, loading }: { audits: FinanceTerminAuditReco
   );
 }
 
-function DraggableTermCard({ flatTerm, onEditDates }: { flatTerm: FlatTerm; onEditDates: (flatTerm: FlatTerm) => void }) {
+function DraggableTermCard({ flatTerm, onEditDates, readOnly }: { flatTerm: FlatTerm; onEditDates: (flatTerm: FlatTerm) => void; readOnly: boolean }) {
   const { term, projectName, clientName, totalProject } = flatTerm;
   const termAmount = (totalProject * term.percentage) / 100;
   const overdue = isOverdue(term.paymentDeadline);
   const days = daysUntil(term.paymentDeadline);
-  const canDrag = VALID_TRANSITIONS[term.termStatus].length > 0;
+  const canDrag = !readOnly && VALID_TRANSITIONS[term.termStatus].length > 0;
   const [showHistory, setShowHistory] = useState(false);
   const { audits, loading: auditLoading } = useAuditHistory(showHistory ? term.id : null);
 
@@ -355,18 +356,20 @@ function DraggableTermCard({ flatTerm, onEditDates }: { flatTerm: FlatTerm; onEd
         </div>
       )}
 
-      <div className="mt-1 grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEditDates(flatTerm);
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-[11px] font-semibold text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-slate-400 dark:hover:bg-white/[0.06]"
-        >
-          Edit Tanggal
-        </button>
+      <div className={`mt-1 grid ${readOnly ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditDates(flatTerm);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-[11px] font-semibold text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:border-white/[0.06] dark:bg-white/[0.03] dark:text-slate-400 dark:hover:bg-white/[0.06]"
+          >
+            Edit Tanggal
+          </button>
+        )}
         <button
           type="button"
           onClick={(e) => {
@@ -412,13 +415,15 @@ function DroppableColumn({
   terms,
   isOver,
   onEditDates,
+  readOnly,
 }: {
   column: TermStatusColumn;
   terms: FlatTerm[];
   isOver: boolean;
   onEditDates: (flatTerm: FlatTerm) => void;
+  readOnly: boolean;
 }) {
-  const { setNodeRef } = useDroppable({ id: column.status });
+  const { setNodeRef } = useDroppable({ id: column.status, disabled: readOnly });
 
   return (
     <section
@@ -442,7 +447,7 @@ function DroppableColumn({
             <span className="text-xs text-gray-400 dark:text-slate-500">Tidak ada termin</span>
           </div>
         ) : (
-          terms.map((flatTerm) => <DraggableTermCard key={`${flatTerm.projectId}-${flatTerm.term.id}`} flatTerm={flatTerm} onEditDates={onEditDates} />)
+          terms.map((flatTerm) => <DraggableTermCard key={`${flatTerm.projectId}-${flatTerm.term.id}`} flatTerm={flatTerm} onEditDates={onEditDates} readOnly={readOnly} />)
         )}
       </div>
 
@@ -521,7 +526,7 @@ function DateEditorModal({
   );
 }
 
-export default function FinanceTrackingBoard({ projects, filters, onStatusChange }: TrackingBoardProps) {
+export default function FinanceTrackingBoard({ projects, filters, onStatusChange, readOnly = false }: TrackingBoardProps) {
   const [activeFlatTerm, setActiveFlatTerm] = useState<FlatTerm | null>(null);
   const [overColumnId, setOverColumnId] = useState<string | null>(null);
   const [dateEditor, setDateEditor] = useState<{ flatTerm: FlatTerm; mode: 'transition' | 'edit' } | null>(null);
@@ -580,14 +585,19 @@ export default function FinanceTrackingBoard({ projects, filters, onStatusChange
   }, [filteredFlatTerms]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
+    if (readOnly) return;
     const flatTerm = event.active.data.current?.flatTerm as FlatTerm | undefined;
     if (flatTerm) {
       setActiveFlatTerm(flatTerm);
     }
-  }, []);
+  }, [readOnly]);
 
   const handleDragOver = useCallback(
     (event: { over: { id: string | number } | null; active: { id: string | number; data: { current?: { flatTerm?: FlatTerm } } } }) => {
+      if (readOnly) {
+        setOverColumnId(null);
+        return;
+      }
       if (!event.over) {
         setOverColumnId(null);
         return;
@@ -613,11 +623,12 @@ export default function FinanceTrackingBoard({ projects, filters, onStatusChange
         overTerm && allowedTargets.includes(overTerm.term.termStatus) ? overTerm.term.termStatus : null
       );
     },
-    [allFlatTerms]
+    [allFlatTerms, readOnly]
   );
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
+      if (readOnly) return;
       const { active, over } = event;
 
       setActiveFlatTerm(null);
@@ -677,7 +688,7 @@ export default function FinanceTrackingBoard({ projects, filters, onStatusChange
         onStatusChange(flatTerm.projectId, { ...project, termins: originalTermins });
       }
     },
-    [allFlatTerms, projects, onStatusChange]
+    [allFlatTerms, projects, onStatusChange, readOnly]
   );
 
   const saveDateEditor = useCallback(async (billingDate: string, paymentDeadline: string) => {
@@ -709,15 +720,21 @@ export default function FinanceTrackingBoard({ projects, filters, onStatusChange
     >
       <div className="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-hidden">
         <div className="flex shrink-0 items-center gap-3 text-xs text-gray-500 dark:text-slate-400">
-          <div className="flex items-center gap-1.5">
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10 2v12M6 6l-4 4 4 4" />
-              <path d="M14 10l-4 4" />
-            </svg>
-            <span>Geser termin antar kolom</span>
-          </div>
-          <span className="text-gray-300 dark:text-slate-600">|</span>
-          <span>Drag bebas ke staging mana pun</span>
+          {readOnly ? (
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 font-semibold text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">Mode pantau - status hanya dapat diubah oleh Finance</span>
+          ) : (
+            <>
+              <div className="flex items-center gap-1.5">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 2v12M6 6l-4 4 4 4" />
+                  <path d="M14 10l-4 4" />
+                </svg>
+                <span>Geser termin antar kolom</span>
+              </div>
+              <span className="text-gray-300 dark:text-slate-600">|</span>
+              <span>Drag bebas ke staging mana pun</span>
+            </>
+          )}
           <span className="text-gray-300 dark:text-slate-600">|</span>
           <span className="font-semibold text-gray-600 dark:text-slate-300">{filteredFlatTerms.length} dari {allFlatTerms.length} termin</span>
         </div>
@@ -729,19 +746,22 @@ export default function FinanceTrackingBoard({ projects, filters, onStatusChange
                 key={column.status}
                 column={column}
                 terms={termsByStatus[column.status]}
-                isOver={overColumnId === column.status}
+                isOver={!readOnly && overColumnId === column.status}
                 onEditDates={(flatTerm) => setDateEditor({ flatTerm, mode: 'edit' })}
+                readOnly={readOnly}
               />
             ))}
           </div>
         </div>
       </div>
 
-      <DragOverlay dropAnimation={null}>
-        {activeFlatTerm ? <TermCardOverlay flatTerm={activeFlatTerm} /> : null}
-      </DragOverlay>
+      {!readOnly && (
+        <DragOverlay dropAnimation={null}>
+          {activeFlatTerm ? <TermCardOverlay flatTerm={activeFlatTerm} /> : null}
+        </DragOverlay>
+      )}
 
-      {dateEditor && (
+      {!readOnly && dateEditor && (
         <DateEditorModal
           flatTerm={dateEditor.flatTerm}
           mode={dateEditor.mode}
