@@ -57,11 +57,11 @@ export default function ManagementDashboard() {
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {view === 'tasks' ? (
-          <TaskBoard />
+          <TaskBoard readOnly />
         ) : view === 'marketing' ? (
           <MarketingDashboard />
         ) : (
-          <FinanceBoardPageContent />
+          <FinanceBoardPageContent readOnly />
         )}
       </div>
     </div>

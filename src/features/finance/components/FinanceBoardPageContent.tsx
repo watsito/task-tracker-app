@@ -21,7 +21,7 @@ const EMPTY_FILTERS: FinanceTrackingFilters = {
   amount: 'ALL',
 };
 
-export default function FinanceBoardPageContent() {
+export default function FinanceBoardPageContent({ readOnly = false }: { readOnly?: boolean }) {
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
   const [projects, setProjects] = useState<FinanceProjectRecord[]>([]);
   const [filters, setFilters] = useState<FinanceTrackingFilters>(EMPTY_FILTERS);
@@ -125,7 +125,7 @@ export default function FinanceBoardPageContent() {
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 pb-5 pt-1 md:px-8 md:pb-8">
-          <FinanceTrackingBoard projects={projects} filters={filters} onStatusChange={handleTerminStatusChange} />
+          <FinanceTrackingBoard projects={projects} filters={filters} onStatusChange={handleTerminStatusChange} readOnly={readOnly} />
         </div>
       )}
     </div>

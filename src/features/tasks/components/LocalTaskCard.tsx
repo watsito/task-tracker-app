@@ -38,6 +38,7 @@ const STATUS_ORDER: TaskStatus[] = ['To Do', 'In Progress', 'Review', 'Done'];
 interface LocalTaskCardProps {
   task: Task;
   isAdmin: boolean;
+  readOnly?: boolean;
   onEdit?: () => void;
 }
 
@@ -62,7 +63,7 @@ function getAvatarColor(assigneeId: string | null): string {
   return colors[index];
 }
 
-export default function LocalTaskCard({ task, isAdmin, onEdit }: LocalTaskCardProps) {
+export default function LocalTaskCard({ task, isAdmin, readOnly = false, onEdit }: LocalTaskCardProps) {
   const { tasks, moveTask, updateTask, softDeleteTask } = useTaskStore();
   const getSyncStatus = useIntegrationStore((s) => s.getSyncStatus);
   const syncStatus = getSyncStatus(task.id);
@@ -75,6 +76,7 @@ export default function LocalTaskCard({ task, isAdmin, onEdit }: LocalTaskCardPr
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
     data: { status: task.status },
+    disabled: readOnly,
   });
 
   const style = transform
@@ -102,7 +104,7 @@ export default function LocalTaskCard({ task, isAdmin, onEdit }: LocalTaskCardPr
       {...listeners}
       id={`task-card-${task.id}`}
       className={`group relative flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all duration-200 hover:border-gray-300 hover:shadow-md dark:border-white/[0.07] dark:bg-slate-800/60 dark:backdrop-blur-sm dark:hover:border-white/[0.14] dark:hover:bg-slate-800/80 dark:hover:shadow-lg dark:hover:shadow-black/30 dark:hover:-translate-y-0.5 ${
-        isDragging ? 'cursor-grabbing border-indigo-500/50' : 'cursor-grab'
+        readOnly ? 'cursor-default' : isDragging ? 'cursor-grabbing border-indigo-500/50' : 'cursor-grab'
       }`}
     >
       <div className="flex items-center justify-between">
@@ -127,7 +129,7 @@ export default function LocalTaskCard({ task, isAdmin, onEdit }: LocalTaskCardPr
         </div>
 
         <div className="flex gap-1">
-          {onEdit && (
+          {!readOnly && onEdit && (
             <button
               onClick={onEdit}
               title="Edit task"
@@ -136,7 +138,7 @@ export default function LocalTaskCard({ task, isAdmin, onEdit }: LocalTaskCardPr
               <PencilIcon />
             </button>
           )}
-          {isAdmin && (
+          {!readOnly && isAdmin && (
             <button
               id={`delete-task-${task.id}`}
               onClick={() => softDeleteTask(task.id)}
@@ -188,7 +190,7 @@ export default function LocalTaskCard({ task, isAdmin, onEdit }: LocalTaskCardPr
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
-                    updateTask(childTask.id, { status: isDone ? 'To Do' : 'Done' });
+                    if (!readOnly) updateTask(childTask.id, { status: isDone ? 'To Do' : 'Done' });
                   }}
                   className="flex min-w-0 items-center gap-1.5 rounded-md px-1 py-0.5 text-left text-[11px] transition hover:bg-gray-100 dark:hover:bg-white/5"
                 >
@@ -218,26 +220,28 @@ export default function LocalTaskCard({ task, isAdmin, onEdit }: LocalTaskCardPr
           {getAvatarLabel(task.assigneeId)}
         </div>
 
-        <div className="flex gap-1">
-          <button
-            id={`move-back-${task.id}`}
-            onClick={() => moveTask(task.id, STATUS_ORDER[currentIndex - 1])}
-            disabled={!canMoveBack}
-            title={canMoveBack ? `Move to ${STATUS_ORDER[currentIndex - 1]}` : 'Already at first column'}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors disabled:cursor-not-allowed disabled:opacity-30 hover:enabled:bg-gray-100 hover:enabled:text-gray-700 dark:text-slate-500 dark:hover:enabled:bg-white/10 dark:hover:enabled:text-slate-200"
-          >
-            <ChevronLeftIcon />
-          </button>
-          <button
-            id={`move-forward-${task.id}`}
-            onClick={() => moveTask(task.id, STATUS_ORDER[currentIndex + 1])}
-            disabled={!canMoveForward}
-            title={canMoveForward ? `Move to ${STATUS_ORDER[currentIndex + 1]}` : 'Already at last column'}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors disabled:cursor-not-allowed disabled:opacity-30 hover:enabled:bg-gray-100 hover:enabled:text-gray-700 dark:text-slate-500 dark:hover:enabled:bg-white/10 dark:hover:enabled:text-slate-200"
-          >
-            <ChevronRightIcon />
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="flex gap-1">
+            <button
+              id={`move-back-${task.id}`}
+              onClick={() => moveTask(task.id, STATUS_ORDER[currentIndex - 1])}
+              disabled={!canMoveBack}
+              title={canMoveBack ? `Move to ${STATUS_ORDER[currentIndex - 1]}` : 'Already at first column'}
+              className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors disabled:cursor-not-allowed disabled:opacity-30 hover:enabled:bg-gray-100 hover:enabled:text-gray-700 dark:text-slate-500 dark:hover:enabled:bg-white/10 dark:hover:enabled:text-slate-200"
+            >
+              <ChevronLeftIcon />
+            </button>
+            <button
+              id={`move-forward-${task.id}`}
+              onClick={() => moveTask(task.id, STATUS_ORDER[currentIndex + 1])}
+              disabled={!canMoveForward}
+              title={canMoveForward ? `Move to ${STATUS_ORDER[currentIndex + 1]}` : 'Already at last column'}
+              className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors disabled:cursor-not-allowed disabled:opacity-30 hover:enabled:bg-gray-100 hover:enabled:text-gray-700 dark:text-slate-500 dark:hover:enabled:bg-white/10 dark:hover:enabled:text-slate-200"
+            >
+              <ChevronRightIcon />
+            </button>
+          </div>
+        )}
       </div>
     </article>
   );

@@ -276,7 +276,11 @@ function TaskModal({ defaultStatus, editTask, onClose }: TaskModalProps) {
   );
 }
 
-export default function LocalBoard() {
+interface LocalBoardProps {
+  readOnly?: boolean;
+}
+
+export default function LocalBoard({ readOnly = false }: LocalBoardProps) {
   const { tasks, moveTask, subscribeToTasks } = useTaskStore();
   const { currentUser } = useAuthStore();
   const isAdmin = currentUser?.role === 'admin';
@@ -299,6 +303,7 @@ export default function LocalBoard() {
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (readOnly) return;
     const { active, over } = event;
     if (!over) return;
     const taskId = active.id as string;
@@ -355,10 +360,12 @@ export default function LocalBoard() {
               <ChartIcon />
               View Dashboard
             </Link>
-            <button id="add-task-btn" onClick={() => setModalState({ type: 'add', status: 'To Do' })} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:bg-indigo-500 hover:shadow-indigo-500/40 active:scale-95">
-              <PlusIcon />
-              Add Task
-            </button>
+            {!readOnly && (
+              <button id="add-task-btn" onClick={() => setModalState({ type: 'add', status: 'To Do' })} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:bg-indigo-500 hover:shadow-indigo-500/40 active:scale-95">
+                <PlusIcon />
+                Add Task
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -378,7 +385,7 @@ export default function LocalBoard() {
         </div>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+      <DndContext sensors={readOnly ? [] : sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
         <div className="min-h-0 flex-1 overflow-hidden">
           <div className="grid h-full min-h-0 grid-cols-1 gap-4 pb-4 xl:grid-cols-4">
             {COLUMNS.map((col) => {
@@ -386,14 +393,14 @@ export default function LocalBoard() {
               const isActiveMobile = activeTab === col.status;
 
               return (
-                <DroppableColumn key={col.status} col={col} colTasks={colTasks} isActiveMobile={isActiveMobile} isAdmin={isAdmin} onAddClick={() => setModalState({ type: 'add', status: col.status })} onEditClick={(task) => setModalState({ type: 'edit', task })} />
+                <DroppableColumn key={col.status} col={col} colTasks={colTasks} isActiveMobile={isActiveMobile} isAdmin={isAdmin} readOnly={readOnly} onAddClick={() => setModalState({ type: 'add', status: col.status })} onEditClick={(task) => setModalState({ type: 'edit', task })} />
               );
             })}
           </div>
         </div>
       </DndContext>
 
-      {modalState && (
+      {!readOnly && modalState && (
         <TaskModal defaultStatus={modalState.type === 'add' ? modalState.status : modalState.task.status} editTask={modalState.type === 'edit' ? modalState.task : null} onClose={() => setModalState(null)} />
       )}
     </div>
@@ -405,12 +412,13 @@ interface DroppableColumnProps {
   colTasks: Task[];
   isActiveMobile: boolean;
   isAdmin: boolean;
+  readOnly?: boolean;
   onAddClick: () => void;
   onEditClick: (task: Task) => void;
 }
 
-function DroppableColumn({ col, colTasks, isActiveMobile, isAdmin, onAddClick, onEditClick }: DroppableColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: col.status });
+function DroppableColumn({ col, colTasks, isActiveMobile, isAdmin, readOnly = false, onAddClick, onEditClick }: DroppableColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: col.status, disabled: readOnly });
 
   return (
     <section ref={setNodeRef} id={`column-${col.status.toLowerCase().replace(/\s+/g, '-')}`} className={`h-full min-h-0 flex-col overflow-hidden rounded-2xl border transition-all duration-300 ${isOver ? 'border-indigo-400 bg-indigo-50 dark:border-indigo-400 dark:bg-slate-800/80' : `${col.borderColor} bg-white dark:bg-slate-900/60`} shadow-lg ${col.glowColor} ${isActiveMobile ? 'flex' : 'hidden xl:flex'}`}>
@@ -426,14 +434,16 @@ function DroppableColumn({ col, colTasks, isActiveMobile, isAdmin, onAddClick, o
             <span className="text-xs text-gray-400 dark:text-slate-500">No tasks here</span>
           </div>
         ) : (
-          colTasks.map((task) => <LocalTaskCard key={task.id} task={task} isAdmin={isAdmin} onEdit={() => onEditClick(task)} />)
+          colTasks.map((task) => <LocalTaskCard key={task.id} task={task} isAdmin={isAdmin} readOnly={readOnly} onEdit={() => onEditClick(task)} />)
         )}
       </div>
 
-      <button onClick={onAddClick} className="m-3 mt-0 flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-dashed border-gray-300 bg-gray-100/50 py-2 text-xs font-medium text-gray-500 transition-colors hover:border-gray-400 hover:bg-gray-200/50 hover:text-gray-700 dark:border-white/15 dark:bg-white/5 dark:text-slate-400 dark:hover:border-white/25 dark:hover:bg-white/10 dark:hover:text-slate-200">
-        <PlusIcon />
-        Add task
-      </button>
+      {!readOnly && (
+        <button onClick={onAddClick} className="m-3 mt-0 flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-dashed border-gray-300 bg-gray-100/50 py-2 text-xs font-medium text-gray-500 transition-colors hover:border-gray-400 hover:bg-gray-200/50 hover:text-gray-700 dark:border-white/15 dark:bg-white/5 dark:text-slate-400 dark:hover:border-white/25 dark:hover:bg-white/10 dark:hover:text-slate-200">
+          <PlusIcon />
+          Add task
+        </button>
+      )}
     </section>
   );
 }

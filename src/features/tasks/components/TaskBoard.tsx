@@ -11,7 +11,11 @@ const BOARD_MODES: Array<{ key: BoardMode; label: string; icon: string }> = [
   { key: 'odoo', label: 'Odoo', icon: '🔗' },
 ];
 
-export default function TaskBoard() {
+interface TaskBoardProps {
+  readOnly?: boolean;
+}
+
+export default function TaskBoard({ readOnly = false }: TaskBoardProps) {
   const [mode, setMode] = useState<BoardMode>('local');
 
   return (
@@ -47,7 +51,7 @@ export default function TaskBoard() {
         </div>
       </div>
 
-      {mode === 'local' ? <LocalBoard /> : <OdooBoard />}
+      {mode === 'local' ? <LocalBoard readOnly={readOnly} /> : <OdooBoard />}
     </div>
   );
 }

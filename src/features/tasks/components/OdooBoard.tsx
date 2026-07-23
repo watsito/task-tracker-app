@@ -71,7 +71,6 @@ function getColumnStyle(index: number) {
 export default function OdooBoard() {
   const [stages, setStages] = useState<OdooProjectStage[]>([]);
   const [projects, setProjects] = useState<OdooProject[]>([]);
-  const [activeTab, setActiveTab] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,7 +97,6 @@ export default function OdooBoard() {
         const sortedStages = [...data.stages].sort((a, b) => a.sequence - b.sequence);
         setStages(sortedStages);
         setProjects(data.projects);
-        setActiveTab((current) => current ?? sortedStages[0]?.id ?? null);
       } catch {
         if (!active) return;
         setError('Tidak bisa mengambil data project Odoo.');
@@ -154,32 +152,14 @@ export default function OdooBoard() {
         </div>
       )}
 
-      <div className="-mx-6 flex shrink-0 overflow-x-auto px-6 pb-3 scrollbar-hide md:hidden">
-        <div className="flex gap-1.5">
-          {stages.map((stage, index) => {
-            const isActive = activeTab === stage.id;
-            const style = getColumnStyle(index);
-            const stageProjects = projectsByStageId[stage.id] ?? [];
-
-            return (
-              <button key={stage.id} onClick={() => setActiveTab(stage.id)} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${isActive ? `bg-gradient-to-r ${style.accentFrom} ${style.accentTo} text-white shadow-lg` : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200'}`}>
-                {stage.name}
-                <span className={`flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${isActive ? 'bg-black/20 text-white' : 'bg-white/10 text-slate-300'}`}>{stageProjects.length}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-hidden">
-        <div className={`grid h-full min-h-0 grid-cols-1 gap-4 pb-4 md:grid-cols-2 ${stages.length >= 3 ? 'lg:grid-cols-3' : ''} ${stages.length >= 4 ? 'xl:grid-cols-4' : ''}`}>
+      <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden pb-3">
+        <div className="flex h-full min-h-0 w-max min-w-full gap-4 pr-1">
           {stages.map((stage, index) => {
             const stageProjects = projectsByStageId[stage.id] ?? [];
             const style = getColumnStyle(index);
-            const isActiveMobile = activeTab === stage.id;
 
             return (
-              <section key={stage.id} id={`column-stage-${stage.id}`} className={`h-full min-h-0 flex-col overflow-hidden rounded-2xl border ${style.borderColor} bg-white shadow-lg ${style.glowColor} dark:bg-slate-900/60 ${isActiveMobile ? 'flex' : 'hidden md:flex'}`}>
+              <section key={stage.id} id={`column-stage-${stage.id}`} className={`flex h-full min-h-0 w-[min(86vw,24rem)] shrink-0 flex-col overflow-hidden rounded-2xl border ${style.borderColor} bg-white shadow-lg ${style.glowColor} dark:bg-slate-900/60 sm:w-[22rem] lg:w-[24rem]`}>
                 <div className={`flex shrink-0 items-center justify-between rounded-t-2xl bg-gradient-to-r ${style.accentFrom} ${style.accentTo} px-4 py-3`}>
                   <span className="text-sm font-semibold text-white drop-shadow">{stage.name}</span>
                   <span className={`flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${style.badgeBg} ${style.badgeText}`}>{stageProjects.length}</span>
