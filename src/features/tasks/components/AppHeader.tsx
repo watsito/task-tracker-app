@@ -91,8 +91,8 @@ export default function AppHeader() {
         {/* Left: Logo + Desktop Nav */}
         <div className="flex items-center gap-3">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="grid h-8 w-8 shrink-0 grid-cols-2 gap-[3px] bg-stone-900 p-1.5 dark:bg-[#b46b3d]" aria-hidden="true">
+          <Link href="/" className="group flex items-center gap-2.5">
+            <div className="grid h-8 w-8 shrink-0 grid-cols-2 gap-[3px] bg-stone-900 p-1.5 transition-transform duration-500 ease-out group-hover:rotate-3 group-hover:scale-105 dark:bg-[#b46b3d]" aria-hidden="true">
               <span className="bg-white" />
               <span className="bg-white/45" />
               <span className="bg-white/45" />
@@ -140,7 +140,7 @@ export default function AppHeader() {
           <button
             onClick={toggleTheme}
             aria-label="Toggle theme"
-            className="flex h-9 w-9 items-center justify-center border border-stone-300 bg-transparent text-stone-600 transition hover:bg-stone-200/70 hover:text-stone-900 dark:border-stone-700 dark:text-stone-400 dark:hover:bg-white/[0.06] dark:hover:text-stone-100"
+            className="flex h-9 w-9 items-center justify-center border border-stone-300 bg-transparent text-stone-600 transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-stone-200/70 hover:text-stone-900 active:translate-y-0 active:scale-95 dark:border-stone-700 dark:text-stone-400 dark:hover:bg-white/[0.06] dark:hover:text-stone-100"
           >
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
           </button>

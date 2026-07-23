@@ -30,7 +30,7 @@ export default function DepartmentSwitcher() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 border border-stone-300 bg-transparent px-3 py-2 text-xs font-semibold text-stone-700 transition hover:bg-stone-200/70 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-white/[0.06]"
+        className="flex items-center gap-2 border border-stone-300 bg-transparent px-3 py-2 text-xs font-semibold text-stone-700 transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-stone-200/70 active:translate-y-0 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-white/[0.06]"
       >
         <span className="flex h-4 w-4 items-center justify-center" aria-hidden="true"><DepartmentIcon /></span>
         <span>{active?.label}</span>
@@ -40,7 +40,7 @@ export default function DepartmentSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-900">
+        <div className="motion-scale-in absolute right-0 top-full z-50 mt-2 w-64 origin-top-right overflow-hidden border border-stone-200 bg-[#faf8f5] shadow-[0_20px_50px_rgba(41,37,36,0.16)] dark:border-stone-700 dark:bg-[#1c1917] dark:shadow-black/40">
           <div className="px-4 py-3">
             <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500">Switch Department</p>
           </div>

@@ -43,38 +43,38 @@ export default function LoginPage() {
 
   return (
     <main className="relative isolate flex min-h-dvh w-full overflow-hidden bg-stone-100 text-stone-950 dark:bg-[#0c0a09] dark:text-stone-50">
-      <div className="absolute inset-y-0 left-0 hidden w-[42%] border-r border-stone-300/70 bg-[#d8d0c5] lg:block dark:border-white/[0.07] dark:bg-[#15120f]" />
-      <div className="absolute left-[8%] top-[14%] hidden h-[72%] w-px bg-stone-500/30 lg:block dark:bg-stone-500/20" />
+      <div className="absolute inset-y-0 left-0 hidden w-[42%] origin-left animate-[motion-panel_900ms_cubic-bezier(0.22,1,0.36,1)_both] border-r border-stone-300/70 bg-[#d8d0c5] lg:block dark:border-white/[0.07] dark:bg-[#15120f]" />
+      <div className="absolute left-[8%] top-[14%] hidden h-[72%] w-px origin-top animate-[motion-line_1100ms_200ms_cubic-bezier(0.22,1,0.36,1)_both] bg-stone-500/30 lg:block dark:bg-stone-500/20" />
 
       <section className="relative z-10 mx-auto grid w-full max-w-7xl items-stretch px-6 sm:px-10 lg:grid-cols-[0.72fr_1fr] lg:px-14">
         <div className="hidden flex-col justify-between py-14 pr-14 lg:flex">
-          <div className="flex items-center gap-3">
+          <div className="motion-slide-right motion-delay-1 flex items-center gap-3">
             <BrandMark />
             <span className="text-sm font-bold tracking-[-0.02em]">Task Tracker</span>
           </div>
 
           <div className="max-w-md pb-12">
-            <p className="text-[clamp(2.75rem,4.6vw,4.8rem)] font-semibold leading-[0.94] tracking-[-0.055em] text-stone-900 dark:text-stone-100">
+            <p className="motion-slide-right motion-delay-2 text-[clamp(2.75rem,4.6vw,4.8rem)] font-semibold leading-[0.94] tracking-[-0.055em] text-stone-900 dark:text-stone-100">
               Kerja yang jelas. Tim yang selaras.
             </p>
-            <p className="mt-8 max-w-sm text-base leading-7 text-stone-600 dark:text-stone-400">
+            <p className="motion-slide-right motion-delay-3 mt-8 max-w-sm text-base leading-7 text-stone-600 dark:text-stone-400">
               Satu ruang kerja untuk merencanakan, menjalankan, dan memantau pekerjaan lintas tim.
             </p>
           </div>
 
-          <p className="text-xs font-medium tracking-wide text-stone-500 dark:text-stone-600">
+          <p className="motion-slide-right motion-delay-4 text-xs font-medium tracking-wide text-stone-500 dark:text-stone-600">
             Product Development &amp; Management
           </p>
         </div>
 
         <div className="flex min-h-dvh items-center justify-center py-12 lg:justify-end lg:pl-20">
           <div className="w-full max-w-[420px]">
-            <div className="mb-12 flex items-center gap-3 lg:hidden">
+            <div className="motion-rise mb-12 flex items-center gap-3 lg:hidden">
               <BrandMark />
               <span className="text-sm font-bold tracking-[-0.02em]">Task Tracker</span>
             </div>
 
-            <div className="mb-9">
+            <div className="motion-rise motion-delay-1 mb-9">
               <p className="text-sm font-medium text-stone-500 dark:text-stone-500">Akses ruang kerja</p>
               <h1 className="mt-3 text-4xl font-semibold tracking-[-0.045em] text-stone-950 dark:text-stone-50">
                 Selamat datang kembali
@@ -84,7 +84,7 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSignIn} className="space-y-5">
+            <form onSubmit={handleSignIn} className="motion-rise motion-delay-2 space-y-5">
               <div>
                 <label htmlFor="login-email" className="mb-2 block text-xs font-semibold text-stone-700 dark:text-stone-300">
                   Email
@@ -121,7 +121,7 @@ export default function LoginPage() {
                     type="button"
                     aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
                     onClick={() => setShowPassword((visible) => !visible)}
-                    className="absolute right-0 top-0 flex h-12 w-12 items-center justify-center text-stone-500 transition hover:text-stone-900 dark:hover:text-stone-200"
+                    className="absolute right-0 top-0 flex h-12 w-12 items-center justify-center text-stone-500 transition duration-300 hover:rotate-6 hover:scale-110 hover:text-stone-900 active:scale-90 dark:hover:text-stone-200"
                   >
                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                   </button>
@@ -139,14 +139,14 @@ export default function LoginPage() {
                 id="submit-login"
                 type="submit"
                 disabled={busy}
-                className="flex h-12 w-full items-center justify-center gap-2 bg-stone-900 px-5 text-sm font-semibold text-white transition duration-200 hover:bg-stone-700 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#b46b3d] dark:hover:bg-[#c47a49]"
+                className="flex h-12 w-full items-center justify-center gap-2 bg-stone-900 px-5 text-sm font-semibold text-white transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-stone-700 hover:shadow-[0_12px_30px_rgba(41,37,36,0.18)] active:translate-y-px active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#b46b3d] dark:hover:bg-[#c47a49] dark:hover:shadow-[0_12px_30px_rgba(180,107,61,0.2)]"
               >
                 {busy && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
                 {busy ? 'Masuk...' : 'Masuk ke ruang kerja'}
               </button>
             </form>
 
-            <p className="mt-10 border-t border-stone-300 pt-5 text-xs leading-5 text-stone-500 dark:border-stone-800 dark:text-stone-600">
+            <p className="motion-rise motion-delay-3 mt-10 border-t border-stone-300 pt-5 text-xs leading-5 text-stone-500 dark:border-stone-800 dark:text-stone-600">
               Akses dibatasi untuk anggota tim yang terdaftar. Hubungi administrator jika Anda mengalami kendala.
             </p>
           </div>
@@ -158,7 +158,7 @@ export default function LoginPage() {
 
 function BrandMark() {
   return (
-    <div className="grid h-9 w-9 grid-cols-2 gap-[3px] bg-stone-900 p-[7px] dark:bg-[#b46b3d]" aria-hidden="true">
+    <div className="grid h-9 w-9 grid-cols-2 gap-[3px] bg-stone-900 p-[7px] transition-transform duration-500 ease-out hover:rotate-3 hover:scale-105 dark:bg-[#b46b3d]" aria-hidden="true">
       <span className="bg-white" />
       <span className="bg-white/45" />
       <span className="bg-white/45" />
