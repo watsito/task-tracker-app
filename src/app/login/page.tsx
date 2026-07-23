@@ -4,254 +4,172 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/features/tasks/store/authStore';
 
-// ─── Floating task card (decorative) ──────────────────────────────────────
-function FloatingCard({
-  title,
-  priority,
-  status,
-  style,
-}: {
-  title: string;
-  priority: string;
-  status: string;
-  style: React.CSSProperties;
-}) {
-  const priorityColors: Record<string, string> = {
-    Urgent: 'text-red-400 bg-red-500/15 border-red-500/30',
-    High: 'text-amber-400 bg-amber-500/15 border-amber-500/30',
-    Medium: 'text-sky-400 bg-sky-500/15 border-sky-500/30',
-    Low: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30',
-  };
-  return (
-    <div
-      className="absolute w-52 rounded-xl border border-white/10 bg-slate-800/70 p-3 backdrop-blur-md"
-      style={style}
-    >
-      <span
-        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${priorityColors[priority]}`}
-      >
-        <span className="h-1 w-1 rounded-full bg-current" />
-        {priority}
-      </span>
-      <p className="mt-2 text-xs font-medium text-slate-200">{title}</p>
-      <p className="mt-1 text-[10px] text-slate-500">{status}</p>
-    </div>
-  );
-}
-
-// ─── Main Login Page ───────────────────────────────────────────────────────
 export default function LoginPage() {
   const { login } = useAuthStore();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignIn = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError('');
 
-    if (!email.includes('@')) { setError('Please enter a valid email address.'); return; }
-    if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
+    if (!email.includes('@')) {
+      setError('Masukkan alamat email yang valid.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password minimal 6 karakter.');
+      return;
+    }
 
     setIsLoading(true);
 
     try {
       await login(email.trim(), password);
-      startTransition(() => { router.replace('/'); });
+      startTransition(() => router.replace('/'));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : 'Login gagal');
       setIsLoading(false);
     }
   };
 
+  const busy = isLoading || isPending;
+
   return (
-    <div className="relative flex min-h-dvh w-full overflow-hidden bg-[#070b14]">
-      {/* Background radial glows */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-indigo-600/20 blur-[120px]" />
-        <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-purple-600/15 blur-[120px]" />
-        <div className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600/10 blur-[100px]" />
-      </div>
+    <main className="relative isolate flex min-h-dvh w-full overflow-hidden bg-stone-100 text-stone-950 dark:bg-[#0c0a09] dark:text-stone-50">
+      <div className="absolute inset-y-0 left-0 hidden w-[42%] border-r border-stone-300/70 bg-[#d8d0c5] lg:block dark:border-white/[0.07] dark:bg-[#15120f]" />
+      <div className="absolute left-[8%] top-[14%] hidden h-[72%] w-px bg-stone-500/30 lg:block dark:bg-stone-500/20" />
 
-      {/* Left decorative panel (hidden on mobile) */}
-      <div className="relative hidden flex-1 flex-col items-center justify-center overflow-hidden lg:flex">
-        {/* Grid overlay */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }}
-        />
-
-        {/* Floating decorative task cards */}
-        <FloatingCard
-          title="Firebase Auth Integration"
-          priority="Urgent"
-          status="In Progress"
-          style={{ top: '18%', left: '8%', transform: 'rotate(-4deg)', opacity: 0.85 }}
-        />
-        <FloatingCard
-          title="Kanban Board Layout"
-          priority="High"
-          status="Review"
-          style={{ top: '38%', left: '18%', transform: 'rotate(2deg)', opacity: 0.7 }}
-        />
-        <FloatingCard
-          title="Design System Setup"
-          priority="Medium"
-          status="To Do"
-          style={{ top: '60%', left: '6%', transform: 'rotate(-2deg)', opacity: 0.6 }}
-        />
-        <FloatingCard
-          title="Project Initialization"
-          priority="Low"
-          status="Done"
-          style={{ top: '75%', left: '22%', transform: 'rotate(3deg)', opacity: 0.5 }}
-        />
-
-        {/* Brand copy */}
-        <div className="relative z-10 flex flex-col items-center gap-5 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-2xl shadow-indigo-500/40">
-            <svg width="30" height="30" viewBox="0 0 16 16" fill="none">
-              <rect x="2" y="2" width="5" height="5" rx="1" fill="white" fillOpacity="0.9" />
-              <rect x="9" y="2" width="5" height="5" rx="1" fill="white" fillOpacity="0.5" />
-              <rect x="2" y="9" width="5" height="5" rx="1" fill="white" fillOpacity="0.5" />
-              <rect x="9" y="9" width="5" height="5" rx="1" fill="white" fillOpacity="0.9" />
-            </svg>
+      <section className="relative z-10 mx-auto grid w-full max-w-7xl items-stretch px-6 sm:px-10 lg:grid-cols-[0.72fr_1fr] lg:px-14">
+        <div className="hidden flex-col justify-between py-14 pr-14 lg:flex">
+          <div className="flex items-center gap-3">
+            <BrandMark />
+            <span className="text-sm font-bold tracking-[-0.02em]">Task Tracker</span>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Task Tracker</h1>
-            <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-400">
-              Kolaborasi tim secara real-time dengan papan Kanban interaktif dan kontrol akses berbasis peran.
+
+          <div className="max-w-md pb-12">
+            <p className="text-[clamp(2.75rem,4.6vw,4.8rem)] font-semibold leading-[0.94] tracking-[-0.055em] text-stone-900 dark:text-stone-100">
+              Kerja yang jelas. Tim yang selaras.
+            </p>
+            <p className="mt-8 max-w-sm text-base leading-7 text-stone-600 dark:text-stone-400">
+              Satu ruang kerja untuk merencanakan, menjalankan, dan memantau pekerjaan lintas tim.
             </p>
           </div>
 
-          {/* Feature pills */}
-          <div className="flex flex-wrap justify-center gap-2">
-            {['Real-Time Sync', 'RBAC', 'Soft Delete', 'Kanban Board'].map((f) => (
-              <span
-                key={f}
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-400"
-              >
-                {f}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Right login panel */}
-      <div className="relative z-10 flex w-full flex-col items-center justify-center px-5 py-12 lg:w-[480px] lg:border-l lg:border-white/[0.06] lg:bg-slate-950/60 lg:backdrop-blur-xl">
-        {/* Mobile logo */}
-        <div className="mb-8 flex items-center gap-3 lg:hidden">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30">
-            <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-              <rect x="2" y="2" width="5" height="5" rx="1" fill="white" fillOpacity="0.9" />
-              <rect x="9" y="2" width="5" height="5" rx="1" fill="white" fillOpacity="0.5" />
-              <rect x="2" y="9" width="5" height="5" rx="1" fill="white" fillOpacity="0.5" />
-              <rect x="9" y="9" width="5" height="5" rx="1" fill="white" fillOpacity="0.9" />
-            </svg>
-          </div>
-          <span className="text-base font-bold text-slate-100">Task Tracker</span>
-        </div>
-
-        <div className="w-full max-w-sm">
-          <h2 className="text-2xl font-bold tracking-tight text-slate-100">Selamat datang</h2>
-          <p className="mt-1.5 text-sm text-slate-400">Masuk untuk melanjutkan ke project board Anda.</p>
-
-          {/* Sign in form */}
-          <form onSubmit={handleSignIn} className="flex flex-col gap-3.5">
-            {/* Email */}
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="login-email" className="text-xs font-medium text-slate-400">Email</label>
-              <input
-                suppressHydrationWarning
-                id="login-email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@contoh.com"
-                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-all duration-150 focus:border-indigo-500/60 focus:bg-indigo-500/5 focus:ring-1 focus:ring-indigo-500/25"
-              />
-            </div>
-
-            {/* Password */}
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="login-password" className="text-xs font-medium text-slate-400">Password</label>
-              <div className="relative">
-                <input
-                  suppressHydrationWarning
-                  id="login-password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimal 6 karakter"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 pr-10 text-sm text-slate-100 placeholder-slate-600 outline-none transition-all duration-150 focus:border-indigo-500/60 focus:bg-indigo-500/5 focus:ring-1 focus:ring-indigo-500/25"
-                />
-                <button
-                  suppressHydrationWarning
-                  type="button"
-                  id="toggle-password-visibility"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-                >
-                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                </button>
-              </div>
-            </div>
-
-            {/* Error message */}
-            {error && (
-              <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3.5 py-2.5 text-xs text-red-400">
-                <span>⚠</span>
-                <span>{error}</span>
-              </div>
-            )}
-
-            {/* Submit */}
-            <button
-              suppressHydrationWarning
-              id="submit-login"
-              type="submit"
-              disabled={isLoading || isPending}
-              className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition-all duration-150 hover:bg-indigo-500 hover:shadow-indigo-500/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isLoading || isPending ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  <span>Masuk...</span>
-                </>
-              ) : (
-                'Masuk ke Dashboard'
-              )}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-[11px] text-slate-600">
-            Dengan masuk, Anda menyetujui{' '}
-            <span className="cursor-pointer text-indigo-400 hover:underline">Syarat Layanan</span>
-            {' '}dan{' '}
-            <span className="cursor-pointer text-indigo-400 hover:underline">Kebijakan Privasi</span>.
+          <p className="text-xs font-medium tracking-wide text-stone-500 dark:text-stone-600">
+            Product Development &amp; Management
           </p>
         </div>
-      </div>
+
+        <div className="flex min-h-dvh items-center justify-center py-12 lg:justify-end lg:pl-20">
+          <div className="w-full max-w-[420px]">
+            <div className="mb-12 flex items-center gap-3 lg:hidden">
+              <BrandMark />
+              <span className="text-sm font-bold tracking-[-0.02em]">Task Tracker</span>
+            </div>
+
+            <div className="mb-9">
+              <p className="text-sm font-medium text-stone-500 dark:text-stone-500">Akses ruang kerja</p>
+              <h1 className="mt-3 text-4xl font-semibold tracking-[-0.045em] text-stone-950 dark:text-stone-50">
+                Selamat datang kembali
+              </h1>
+              <p className="mt-3 text-sm leading-6 text-stone-600 dark:text-stone-400">
+                Masuk menggunakan akun perusahaan Anda.
+              </p>
+            </div>
+
+            <form onSubmit={handleSignIn} className="space-y-5">
+              <div>
+                <label htmlFor="login-email" className="mb-2 block text-xs font-semibold text-stone-700 dark:text-stone-300">
+                  Email
+                </label>
+                <input
+                  suppressHydrationWarning
+                  id="login-email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="nama@perusahaan.com"
+                  className="h-12 w-full border border-stone-300 bg-white px-4 text-sm text-stone-950 outline-none transition duration-200 placeholder:text-stone-400 hover:border-stone-400 focus:border-stone-700 focus:ring-1 focus:ring-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-600 dark:hover:border-stone-600 dark:focus:border-amber-600 dark:focus:ring-amber-600"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="login-password" className="mb-2 block text-xs font-semibold text-stone-700 dark:text-stone-300">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    suppressHydrationWarning
+                    id="login-password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Minimal 6 karakter"
+                    className="h-12 w-full border border-stone-300 bg-white px-4 pr-12 text-sm text-stone-950 outline-none transition duration-200 placeholder:text-stone-400 hover:border-stone-400 focus:border-stone-700 focus:ring-1 focus:ring-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-600 dark:hover:border-stone-600 dark:focus:border-amber-600 dark:focus:ring-amber-600"
+                  />
+                  <button
+                    suppressHydrationWarning
+                    type="button"
+                    aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    className="absolute right-0 top-0 flex h-12 w-12 items-center justify-center text-stone-500 transition hover:text-stone-900 dark:hover:text-stone-200"
+                  >
+                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  </button>
+                </div>
+              </div>
+
+              {error && (
+                <div role="alert" className="border-l-2 border-red-600 bg-red-50 px-4 py-3 text-xs font-medium text-red-700 dark:bg-red-950/30 dark:text-red-300">
+                  {error}
+                </div>
+              )}
+
+              <button
+                suppressHydrationWarning
+                id="submit-login"
+                type="submit"
+                disabled={busy}
+                className="flex h-12 w-full items-center justify-center gap-2 bg-stone-900 px-5 text-sm font-semibold text-white transition duration-200 hover:bg-stone-700 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#b46b3d] dark:hover:bg-[#c47a49]"
+              >
+                {busy && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
+                {busy ? 'Masuk...' : 'Masuk ke ruang kerja'}
+              </button>
+            </form>
+
+            <p className="mt-10 border-t border-stone-300 pt-5 text-xs leading-5 text-stone-500 dark:border-stone-800 dark:text-stone-600">
+              Akses dibatasi untuk anggota tim yang terdaftar. Hubungi administrator jika Anda mengalami kendala.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function BrandMark() {
+  return (
+    <div className="grid h-9 w-9 grid-cols-2 gap-[3px] bg-stone-900 p-[7px] dark:bg-[#b46b3d]" aria-hidden="true">
+      <span className="bg-white" />
+      <span className="bg-white/45" />
+      <span className="bg-white/45" />
+      <span className="bg-white" />
     </div>
   );
 }
 
-// ─── Inline icons ──────────────────────────────────────────────────────────
 function EyeIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -260,7 +178,7 @@ function EyeIcon() {
 
 function EyeOffIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
       <line x1="1" y1="1" x2="23" y2="23" />
     </svg>

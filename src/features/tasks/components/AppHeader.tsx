@@ -87,24 +87,19 @@ export default function AppHeader() {
 
   return (
     <>
-      <header className="relative z-30 flex items-center justify-between border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur-md sm:px-6 md:px-8 dark:border-white/[0.06] dark:bg-slate-950/90">
+      <header className="relative z-30 flex items-center justify-between border-b border-stone-200 bg-[#f5f0eb]/95 px-4 py-3 backdrop-blur-md sm:px-6 md:px-8 dark:border-white/[0.07] dark:bg-[#0c0a09]/95">
         {/* Left: Logo + Desktop Nav */}
         <div className="flex items-center gap-3">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="2" y="2" width="5" height="5" rx="1" fill="white" fillOpacity="0.9" />
-                <rect x="9" y="2" width="5" height="5" rx="1" fill="white" fillOpacity="0.5" />
-                <rect x="2" y="9" width="5" height="5" rx="1" fill="white" fillOpacity="0.5" />
-                <rect x="9" y="9" width="5" height="5" rx="1" fill="white" fillOpacity="0.9" />
-              </svg>
+            <div className="grid h-8 w-8 shrink-0 grid-cols-2 gap-[3px] bg-stone-900 p-1.5 dark:bg-[#b46b3d]" aria-hidden="true">
+              <span className="bg-white" />
+              <span className="bg-white/45" />
+              <span className="bg-white/45" />
+              <span className="bg-white" />
             </div>
-            <span className="hidden text-sm font-bold tracking-tight text-gray-900 sm:block dark:text-slate-100">
-              Product dev & Management
-            </span>
-            <span className="hidden rounded-full bg-indigo-500/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-400 sm:block">
-              Beta
+            <span className="hidden text-sm font-bold tracking-[-0.02em] text-stone-900 sm:block dark:text-stone-100">
+              Product Development
             </span>
           </Link>
 
@@ -119,9 +114,9 @@ export default function AppHeader() {
                   href={href}
                   id={`nav-${label.toLowerCase()}`}
                   className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
-                    isActive
-                      ? 'bg-gray-200 text-gray-900 dark:bg-white/10 dark:text-slate-100'
-                      : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-200'
+                     isActive
+                       ? 'bg-stone-900 text-white dark:bg-[#b46b3d] dark:text-white'
+                       : 'text-stone-500 hover:bg-stone-200/70 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-white/[0.06] dark:hover:text-stone-100'
                   }`}
                 >
                   <Icon />
@@ -145,7 +140,7 @@ export default function AppHeader() {
           <button
             onClick={toggleTheme}
             aria-label="Toggle theme"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-300 bg-gray-100 text-gray-600 transition hover:bg-gray-200 hover:text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+            className="flex h-9 w-9 items-center justify-center border border-stone-300 bg-transparent text-stone-600 transition hover:bg-stone-200/70 hover:text-stone-900 dark:border-stone-700 dark:text-stone-400 dark:hover:bg-white/[0.06] dark:hover:text-stone-100"
           >
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
           </button>
@@ -173,7 +168,7 @@ export default function AppHeader() {
       {/* Mobile menu panel */}
       <div
         ref={menuRef}
-        className={`fixed left-0 right-0 top-[57px] z-20 border-b border-gray-200 bg-white/98 backdrop-blur-xl transition-all duration-200 md:hidden dark:border-white/[0.08] dark:bg-slate-950/98 ${
+        className={`fixed left-0 right-0 top-[57px] z-20 border-b border-stone-200 bg-[#f5f0eb]/98 backdrop-blur-xl transition-all duration-200 md:hidden dark:border-white/[0.08] dark:bg-[#0c0a09]/98 ${
           menuOpen
             ? 'translate-y-0 opacity-100'
             : 'pointer-events-none -translate-y-2 opacity-0'
@@ -189,13 +184,13 @@ export default function AppHeader() {
                 onClick={() => setMenuOpen(false)}
                 className={`flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium transition ${
                   isActive
-                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-600/20 dark:text-indigo-300'
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-white/5'
+                     ? 'bg-stone-900 text-white dark:bg-[#b46b3d] dark:text-white'
+                     : 'text-stone-600 hover:bg-stone-200/70 dark:text-stone-300 dark:hover:bg-white/[0.06]'
                 }`}
               >
                 <Icon />
                 {label}
-                {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-indigo-400" />}
+                {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white/80" />}
               </Link>
             );
           })}

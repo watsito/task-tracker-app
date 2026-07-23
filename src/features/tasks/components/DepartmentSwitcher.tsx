@@ -30,9 +30,9 @@ export default function DepartmentSwitcher() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+        className="flex items-center gap-2 border border-stone-300 bg-transparent px-3 py-2 text-xs font-semibold text-stone-700 transition hover:bg-stone-200/70 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-white/[0.06]"
       >
-        <span>{active?.icon}</span>
+        <span className="flex h-4 w-4 items-center justify-center" aria-hidden="true"><DepartmentIcon /></span>
         <span>{active?.label}</span>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${open ? 'rotate-180' : ''}`}>
           <path d="M6 9l6 6 6-6" />
@@ -63,17 +63,17 @@ export default function DepartmentSwitcher() {
                     !hasAccess
                       ? 'cursor-not-allowed opacity-40'
                       : isActive
-                        ? 'bg-indigo-50 dark:bg-indigo-500/10'
-                        : 'hover:bg-gray-50 dark:hover:bg-white/[0.03]'
+                        ? 'bg-stone-100 dark:bg-[#b46b3d]/15'
+                         : 'hover:bg-stone-50 dark:hover:bg-white/[0.03]'
                   }`}
                 >
-                  <span className="mt-0.5 text-lg">{dept.icon}</span>
-                  <div className="flex-1">
-                    <p className={`text-sm font-semibold ${isActive ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-800 dark:text-slate-200'}`}>{dept.label}</p>
+                   <span className={`mt-0.5 flex h-7 w-7 items-center justify-center border ${isActive ? 'border-stone-700 text-stone-900 dark:border-[#b46b3d] dark:text-[#d89162]' : 'border-stone-300 text-stone-500 dark:border-stone-700 dark:text-stone-500'}`} aria-hidden="true"><DepartmentIcon /></span>
+                   <div className="flex-1">
+                     <p className={`text-sm font-semibold ${isActive ? 'text-stone-900 dark:text-[#d89162]' : 'text-stone-800 dark:text-stone-200'}`}>{dept.label}</p>
                     <p className="text-[11px] text-gray-400 dark:text-slate-500">{dept.desc}</p>
                   </div>
                   {isActive && (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-1 shrink-0 text-indigo-500 dark:text-indigo-400">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-1 shrink-0 text-stone-700 dark:text-[#d89162]">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   )}
@@ -84,5 +84,16 @@ export default function DepartmentSwitcher() {
         </div>
       )}
     </div>
+  );
+}
+
+function DepartmentIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+      <rect x="14" y="14" width="7" height="7" />
+    </svg>
   );
 }
